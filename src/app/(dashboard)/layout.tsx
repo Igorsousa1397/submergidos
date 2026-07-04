@@ -4,17 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { sair } from "./actions";
 
 // Shell do dashboard. Carrega o perfil 1x e protege as rotas internas.
+// Só listamos telas que já existem — as demais do Encontro serão portadas depois.
 const NAV = [
   { href: "/dashboard", label: "Início" },
   { href: "/encontristas", label: "Encontristas" },
-  { href: "/check-in", label: "Check-in" },
-  { href: "/quartos", label: "Quartos" },
-  { href: "/escalas", label: "Escalas" },
-  { href: "/servos", label: "Servos" },
-  { href: "/cartas", label: "Cartas" },
-  { href: "/ocorrencias", label: "Ocorrências" },
-  { href: "/onibus", label: "Ônibus" },
-  { href: "/avisos", label: "Avisos" },
 ];
 
 export default async function DashboardLayout({
@@ -29,19 +22,19 @@ export default async function DashboardLayout({
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-[#E1ECF3] bg-white px-3 py-2">
+    <div data-zone="deep" className="min-h-screen">
+      <nav className="sticky top-0 z-10 flex items-center gap-1 overflow-x-auto border-b border-[rgba(164,214,232,0.12)] bg-[rgba(0,14,33,0.6)] px-3 py-2 backdrop-blur-sm">
         {NAV.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-corrente hover:bg-bruma"
+            className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-raso transition hover:bg-white/10 hover:text-luz"
           >
             {item.label}
           </Link>
         ))}
         <form action={sair} className="ml-auto">
-          <button className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-alerta hover:bg-alerta-bg">
+          <button className="whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium text-alerta transition hover:bg-[rgba(229,86,78,0.12)]">
             Sair
           </button>
         </form>
