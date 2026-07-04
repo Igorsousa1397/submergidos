@@ -35,16 +35,9 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-md space-y-4 p-4">
       {/* saudação */}
       <header className="pt-2">
-        <div className="flex items-center gap-2">
-          <h1 className="font-display text-2xl font-extrabold text-luz">
-            Shalom, {primeiroNome}.
-          </h1>
-          {perfil?.role === "admin" && (
-            <span className="rounded-full border border-[rgba(18,181,166,0.35)] bg-[rgba(18,181,166,0.12)] px-2 py-0.5 text-xs font-semibold text-ok">
-              Admin
-            </span>
-          )}
-        </div>
+        <h1 className="font-display text-2xl font-extrabold text-luz">
+          Shalom, {primeiroNome}.
+        </h1>
       </header>
 
       {/* 4 cards de topo */}

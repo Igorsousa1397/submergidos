@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Menu,
@@ -59,7 +60,7 @@ export function DashboardShell({
   return (
     <div data-zone="deep" className="min-h-screen">
       {/* cabeçalho */}
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-[rgba(164,214,232,0.12)] bg-[rgba(0,14,33,0.8)] px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-30 flex items-center border-b border-[rgba(164,214,232,0.12)] bg-[rgba(0,14,33,0.8)] px-4 py-3 backdrop-blur">
         <button
           onClick={() => setAberto(true)}
           aria-label="Abrir menu"
@@ -68,7 +69,15 @@ export function DashboardShell({
           <Menu size={18} />
         </button>
 
-        <span className="font-display text-base font-bold text-luz">Submergidos</span>
+        {/* logo centralizada (absoluta p/ ficar no centro exato) */}
+        <Image
+          src="/fonte-logo.png"
+          alt="Fonte"
+          width={140}
+          height={56}
+          className="absolute left-1/2 h-10 w-auto -translate-x-1/2"
+          priority
+        />
 
         <div className="ml-auto flex items-center gap-2">
           {role === "admin" && (
