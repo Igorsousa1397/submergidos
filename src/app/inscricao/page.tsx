@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { criarInscricao } from "@/features/inscricoes/actions";
 import { CELULAS, IGREJAS } from "@/features/inscricoes/options";
+import { buscarParaTermo } from "@/features/termo/termo";
+import { TermoInscricao, type TermoDados } from "@/features/termo/termo-inscricao";
 
 type Sim = "Sim" | "Não" | "";
 
@@ -172,6 +174,11 @@ export default function InscricaoPage() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
+  // Fluxo inline: após inscrever, mostramos o termo na própria página.
+  const [encId, setEncId] = useState<string | null>(null);
+  const [docWhats, setDocWhats] = useState("");
+  const [termoDados, setTermoDados] = useState<TermoDados | null>(null);
+
   const set = (patch: Partial<FormState>) =>
     setForm((f) => ({ ...f, ...patch }));
 
@@ -216,15 +223,55 @@ export default function InscricaoPage() {
       doenca: form.temDoenca === "Sim" ? form.doenca : null,
     });
 
-    setEnviando(false);
-    if (res.ok) {
-      window.location.href = `/pagamento?doc=${res.whatsapp}`;
+    if (!res.ok) {
+      setEnviando(false);
+      setErro(res.erro);
       return;
     }
-    setErro(res.erro);
+
+    // Inscrição salva. Recupera o id (via RPC pública) para abrir o termo inline.
+    const busca = await buscarParaTermo(res.whatsapp);
+    setEnviando(false);
+
+    if (busca.ok) {
+      setEncId(busca.enc.id);
+      setDocWhats(res.whatsapp);
+      setTermoDados({
+        nome: res.nome,
+        cpf: form.cpf,
+        sexo: form.sexo === "feminino" ? "Feminino" : "Masculino",
+        igreja:
+          form.igreja === "Outra" ? form.igrejaCustom || "Outra" : form.igreja,
+        autorizaImagem: form.autorizaImagem || null,
+      });
+      return;
+    }
+
+    // Fallback improvável: inscrição gravou mas a RPC não achou.
+    setErro(
+      "Inscrição salva! Para assinar o termo, acesse \"Já se inscreveu?\" e informe seu CPF ou WhatsApp.",
+    );
   };
 
-  // ===== Formulário =====
+  // ===== Etapa 2: Termo inline (após inscrever, antes do pagamento) =====
+  if (encId && termoDados) {
+    return (
+      <TermoInscricao
+        encId={encId}
+        dados={termoDados}
+        onAssinado={() => {
+          window.location.href = `/pagamento?doc=${docWhats}`;
+        }}
+        onVoltar={() => {
+          // volta pro formulário sem perder os dados digitados
+          setEncId(null);
+          setTermoDados(null);
+        }}
+      />
+    );
+  }
+
+  // ===== Etapa 1: Formulário =====
   return (
     <div data-zone="deep" className="min-h-screen bg-abismo pb-16 text-luz">
       {/* topo */}

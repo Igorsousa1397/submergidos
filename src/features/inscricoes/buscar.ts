@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { EncontristaStatus } from "@/lib/database.types";
+import type { EncontristaStatus } from "@/lib/db-types";
 
 export interface InscricaoEncontrada {
   id: string;
@@ -9,6 +9,7 @@ export interface InscricaoEncontrada {
   igreja: string | null;
   celula: string | null;
   status: EncontristaStatus;
+  termo_assinado_at: string | null;
 }
 
 export type BuscaResult =

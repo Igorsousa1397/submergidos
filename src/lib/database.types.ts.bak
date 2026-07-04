@@ -182,12 +182,7 @@ export type Database = {
           status: Database["public"]["Enums"]["encontrista_status"]
           termo_assinado_at: string | null
           termo_assinatura: string | null
-          termo_cep: string | null
-          termo_complemento: string | null
           termo_doc_path: string | null
-          termo_doc_verso_path: string | null
-          termo_endereco: string | null
-          termo_numero: string | null
           termo_pdf_path: string | null
           termo_selfie_path: string | null
           whatsapp: string | null
@@ -215,12 +210,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["encontrista_status"]
           termo_assinado_at?: string | null
           termo_assinatura?: string | null
-          termo_cep?: string | null
-          termo_complemento?: string | null
           termo_doc_path?: string | null
-          termo_doc_verso_path?: string | null
-          termo_endereco?: string | null
-          termo_numero?: string | null
           termo_pdf_path?: string | null
           termo_selfie_path?: string | null
           whatsapp?: string | null
@@ -248,12 +238,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["encontrista_status"]
           termo_assinado_at?: string | null
           termo_assinatura?: string | null
-          termo_cep?: string | null
-          termo_complemento?: string | null
           termo_doc_path?: string | null
-          termo_doc_verso_path?: string | null
-          termo_endereco?: string | null
-          termo_numero?: string | null
           termo_pdf_path?: string | null
           termo_selfie_path?: string | null
           whatsapp?: string | null
@@ -625,19 +610,6 @@ export type Database = {
       }
     }
     Functions: {
-      assinar_termo: {
-        Args: {
-          p_cep: string
-          p_complemento: string
-          p_doc_path: string
-          p_doc_verso_path: string
-          p_enc_id: string
-          p_endereco: string
-          p_numero: string
-          p_selfie_path: string
-        }
-        Returns: boolean
-      }
       buscar_inscricao: {
         Args: { documento: string }
         Returns: {
@@ -646,7 +618,6 @@ export type Database = {
           igreja: string
           nome: string
           status: Database["public"]["Enums"]["encontrista_status"]
-          termo_assinado_at: string
         }[]
       }
       current_role_slug: { Args: never; Returns: string }
