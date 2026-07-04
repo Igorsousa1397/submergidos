@@ -10,8 +10,8 @@ import {
 } from "@/features/inscricoes/buscar";
 import { TermoInscricao } from "@/features/termo/termo-inscricao";
 
-const INSTAGRAM = "https://instagram.com/fontecajamar";
-const WHATSAPP_SUPORTE = "#"; // TODO: link do WhatsApp de suporte
+const WHATSAPP_SUPORTE =
+  "https://wa.me/5511982222149?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20meu%20pagamento%20no%20Submergidos.";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -129,6 +129,26 @@ export default function PagamentoPage() {
     setLoading(false);
     if (res.ok) setEnc(res.enc);
     else setErro(res.erro);
+  };
+
+  // Botão "Já paguei — verificar": rebusca pelo mesmo documento digitado e,
+  // se ainda não estiver pago, avisa (o webhook do MP pode levar alguns segundos).
+  const verificarPagamento = async () => {
+    if (!enc || loading) return;
+    setLoading(true);
+    setErro("");
+    const res = await buscarInscricao(busca);
+    setLoading(false);
+    if (res.ok) {
+      setEnc(res.enc);
+      if (res.enc.status !== "pago") {
+        setErro(
+          "Ainda não identificamos seu pagamento. Se você acabou de pagar, aguarde alguns instantes e verifique novamente.",
+        );
+      }
+    } else {
+      setErro(res.erro);
+    }
   };
 
   const pagar = async (tipo: "pix" | "credito") => {
@@ -287,7 +307,7 @@ export default function PagamentoPage() {
                 </div>
 
                 <button
-                  onClick={verificar}
+                  onClick={verificarPagamento}
                   disabled={loading}
                   style={{ ...BG({ width: "100%", padding: 16, borderRadius: 14, fontSize: 15, marginBottom: 8, opacity: loading ? 0.7 : 1 }), background: G.ok }}
                 >
@@ -300,17 +320,6 @@ export default function PagamentoPage() {
             )}
           </div>
         )}
-
-        {/* flutuante Instagram */}
-        <div style={{ position: "fixed", bottom: 24, right: 24 }}>
-          <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer" aria-label="Instagram" style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(45deg,#f09433,#dc2743,#bc1888)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(220,39,67,.4)" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-              <rect x="2" y="2" width="20" height="20" rx="5" />
-              <circle cx="12" cy="12" r="4" />
-              <circle cx="17.5" cy="6.5" r="1" fill="#fff" stroke="none" />
-            </svg>
-          </a>
-        </div>
       </div>
     </div>
   );
