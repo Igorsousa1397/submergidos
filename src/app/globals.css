@@ -1,0 +1,57 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Profundezas — paleta extraída da capa do evento */
+  --abismo: #00060f;
+  --breu: #000e21;
+  --profundo: #03213b;
+  --oceano: #063d64;
+  --mar: #146997;       /* cor de marca */
+  --corrente: #416a87;
+  --raso: #a4d6e8;       /* luz / brilho */
+  --luz: #dcf1f8;
+  --bruma: #eaf6fb;
+  --espuma: #ffffff;
+  --brilho: #1e8fcc;     /* hover de CTA */
+
+  /* Status (encontrista) re-tonalizados ao oceano */
+  --ok: #12b5a6;         --ok-bg: #d9f6f2;      --ok-fg: #0a5f57;
+  --aviso: #e0a23c;      --aviso-bg: #fbefd9;   --aviso-fg: #7a5410;
+  --alerta: #e5564e;     --alerta-bg: #fbe4e3;  --alerta-fg: #8a211c;
+  --neutro: #6e8a9c;     --neutro-bg: #e7eef2;  --neutro-fg: #36505f;
+
+  --font-display: "Archivo", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Águas de trabalho (claro) — padrão das telas densas */
+body {
+  background: var(--bruma);
+  color: var(--profundo);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Superfície imersiva (escuro) — login, boas-vindas, home do servo, heróis.
+   Aplique data-zone="deep" no <html> ou no wrapper da rota. */
+[data-zone="deep"] {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(164,214,232,.22), rgba(20,105,151,.08) 35%, transparent 60%),
+    linear-gradient(180deg, var(--breu) 0%, var(--profundo) 45%, var(--abismo) 100%);
+  color: var(--luz);
+  min-height: 100vh;
+}
+
+/* Display luminoso, no espírito da capa */
+.display-glow {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--espuma);
+  text-shadow: 0 0 28px rgba(164,214,232,.55), 0 0 60px rgba(20,105,151,.35);
+}

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Submergidos — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Profundezas — extraídas da capa */
+    --abismo:   #00060F;
+    --breu:     #000E21;
+    --profundo: #03213B;
+    --oceano:   #063D64;
+    --mar:      #146997;  /* cor de marca */
+    --corrente: #416A87;
+    --raso:     #A4D6E8;  /* luz / brilho */
+    --luz:      #DCF1F8;
+    --bruma:    #EAF6FB;
+    --espuma:   #FFFFFF;
+    --brilho:   #1E8FCC;  /* CTA hover */
+    /* Status re-tonalizados ao oceano */
+    --ok:     #12B5A6;
+    --aviso:  #E0A23C;
+    --alerta: #E5564E;
+    --neutro: #6E8A9C;
+    --font-display: "Archivo", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-body); color: var(--luz); background: var(--abismo); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px; }
+  .eyebrow { font-family: var(--font-body); font-weight: 600; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--raso); }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    position: relative; overflow: hidden; text-align: center;
+    padding: 120px 24px 96px;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(164,214,232,.28), rgba(20,105,151,.10) 35%, transparent 60%),
+      linear-gradient(180deg, var(--breu) 0%, var(--profundo) 45%, var(--abismo) 100%);
+  }
+  .shaft { position: absolute; top: -10%; width: 140px; height: 130%; filter: blur(22px); opacity: .5; pointer-events: none;
+    background: linear-gradient(180deg, rgba(164,214,232,.45), transparent 70%); }
+  .shaft.a { left: 38%; transform: rotate(8deg); }
+  .shaft.b { left: 52%; transform: rotate(-6deg); opacity: .35; width: 90px; }
+  .hero h1 {
+    position: relative; font-family: var(--font-display); font-weight: 900; font-size: clamp(40px, 9vw, 92px);
+    letter-spacing: .04em; text-transform: uppercase; color: var(--espuma); line-height: .95;
+    text-shadow: 0 0 28px rgba(164,214,232,.55), 0 0 60px rgba(20,105,151,.35);
+  }
+  .hero p { position: relative; margin-top: 14px; font-weight: 600; font-size: clamp(12px,2.6vw,17px);
+    letter-spacing: .28em; text-transform: uppercase; color: var(--raso); }
+
+  section { padding: 56px 0; border-top: 1px solid rgba(164,214,232,.10); }
+  .sec-title { font-family: var(--font-display); font-weight: 800; font-size: 22px; color: var(--espuma); margin: 10px 0 6px; }
+  .sec-desc { color: var(--corrente); font-size: 14px; max-width: 620px; line-height: 1.6; margin-bottom: 28px; }
+  .corrente-light { color: #8FB3C8; }
+
+  /* ---------- PALETA ---------- */
+  .grid { display: grid; gap: 12px; }
+  .ramp { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .sw { border-radius: 12px; padding: 14px; min-height: 92px; display: flex; flex-direction: column; justify-content: flex-end;
+    border: 1px solid rgba(255,255,255,.06); }
+  .sw .n { font-weight: 600; font-size: 13px; }
+  .sw .h { font-family: var(--font-mono); font-size: 11px; opacity: .8; }
+
+  /* ---------- TIPOGRAFIA ---------- */
+  .type-row { padding: 16px 0; border-bottom: 1px solid rgba(164,214,232,.08); }
+  .type-row .meta { font-family: var(--font-mono); font-size: 11px; color: var(--corrente); margin-bottom: 6px; }
+  .t-display { font-family: var(--font-display); font-weight: 800; font-size: 34px; color: var(--espuma); text-transform: uppercase; letter-spacing: .03em; }
+  .t-h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--espuma); }
+  .t-body { font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--luz); }
+  .t-mono { font-family: var(--font-mono); font-size: 18px; color: var(--raso); }
+
+  /* ---------- COMPONENTES ---------- */
+  .zones { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px){ .zones { grid-template-columns: 1fr; } }
+  .zone { border-radius: 16px; padding: 20px; }
+  .zone-label { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 16px; }
+  .zone-deep { background: linear-gradient(180deg, var(--profundo), var(--breu)); border: 1px solid rgba(164,214,232,.12); }
+  .zone-deep .zone-label { color: var(--raso); }
+  .zone-light { background: var(--bruma); border: 1px solid #D6E6EF; }
+  .zone-light .zone-label { color: var(--mar); }
+
+  .btn { font-family: var(--font-body); font-weight: 600; font-size: 14px; border: none; border-radius: 10px; padding: 11px 18px; cursor: pointer; }
+  .btn-primary { background: var(--mar); color: #fff; box-shadow: 0 6px 22px rgba(20,105,151,.45); }
+  .btn-ghost-deep { background: transparent; color: var(--raso); border: 1px solid rgba(164,214,232,.3); }
+  .btn-ghost-light { background: transparent; color: var(--mar); border: 1px solid #BcdAe8; }
+
+  .pill { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px; margin: 3px; }
+
+  .card-deep { background: rgba(164,214,232,.05); border: 1px solid rgba(164,214,232,.14); border-radius: 14px; padding: 16px; position: relative; }
+  .card-deep::before { content:""; position:absolute; inset:0 0 auto 0; height:1px; background: linear-gradient(90deg, transparent, rgba(164,214,232,.5), transparent); border-radius: 14px; }
+  .card-light { background: #fff; border: 1px solid #E1ECF3; border-radius: 14px; padding: 16px; }
+
+  .input-deep { width: 100%; background: rgba(0,14,33,.6); border: 1px solid rgba(164,214,232,.18); color: var(--luz); border-radius: 10px; padding: 10px 12px; font-family: var(--font-body); font-size: 14px; outline: none; }
+  .input-deep:focus { border-color: var(--raso); box-shadow: 0 0 0 3px rgba(164,214,232,.18); }
+  .input-light { width: 100%; background: #fff; border: 1px solid #CFE0EB; color: var(--profundo); border-radius: 10px; padding: 10px 12px; font-family: var(--font-body); font-size: 14px; outline: none; }
+  .input-light:focus { border-color: var(--mar); box-shadow: 0 0 0 3px rgba(20,105,151,.15); }
+
+  .stat-num { font-family: var(--font-display); font-weight: 900; font-size: 38px; color: var(--espuma); line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--corrente); margin-top: 4px; }
+
+  .progress { height: 8px; border-radius: 999px; background: rgba(164,214,232,.15); overflow: hidden; margin-top: 10px; }
+  .progress > span { display:block; height:100%; width: 68%; background: linear-gradient(90deg, var(--mar), var(--raso)); }
+
+  footer { padding: 40px 0 64px; color: var(--corrente); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="shaft a"></div>
+    <div class="shaft b"></div>
+    <h1>Submergidos</h1>
+    <p>Mergulhe no próximo nível</p>
+  </header>
+
+  <div class="wrap">
+
+    <section>
+      <span class="eyebrow">Paleta</span>
+      <h2 class="sec-title">Profundezas</h2>
+      <p class="sec-desc">A escala vem direto da capa: do breu das profundezas ao azul-mar de marca, terminando na luz que rompe a água. <span style="font-family:var(--font-mono);color:var(--raso)">#146997</span> é a cor dominante — é ela que aparece em ações, links e estados ativos.</p>
+      <div class="grid ramp">
+        <div class="sw" style="background:#00060F"><span class="n" style="color:#8FB3C8">Abismo</span><span class="h" style="color:#8FB3C8">#00060F</span></div>
+        <div class="sw" style="background:#000E21"><span class="n" style="color:#A4D6E8">Breu</span><span class="h" style="color:#A4D6E8">#000E21</span></div>
+        <div class="sw" style="background:#03213B"><span class="n" style="color:#A4D6E8">Profundo</span><span class="h" style="color:#A4D6E8">#03213B</span></div>
+        <div class="sw" style="background:#063D64"><span class="n" style="color:#DCF1F8">Oceano</span><span class="h" style="color:#DCF1F8">#063D64</span></div>
+        <div class="sw" style="background:#146997"><span class="n" style="color:#fff">Mar · marca</span><span class="h" style="color:#DCF1F8">#146997</span></div>
+        <div class="sw" style="background:#416A87"><span class="n" style="color:#fff">Corrente</span><span class="h" style="color:#DCF1F8">#416A87</span></div>
+        <div class="sw" style="background:#A4D6E8"><span class="n" style="color:#03213B">Raso · luz</span><span class="h" style="color:#03213B">#A4D6E8</span></div>
+        <div class="sw" style="background:#DCF1F8"><span class="n" style="color:#03213B">Luz</span><span class="h" style="color:#063D64">#DCF1F8</span></div>
+        <div class="sw" style="background:#EAF6FB"><span class="n" style="color:#03213B">Bruma</span><span class="h" style="color:#063D64">#EAF6FB</span></div>
+        <div class="sw" style="background:#FFFFFF"><span class="n" style="color:#03213B">Espuma</span><span class="h" style="color:#416A87">#FFFFFF</span></div>
+      </div>
+    </section>
+
+    <section>
+      <span class="eyebrow">Status</span>
+      <h2 class="sec-title">Estados do encontrista</h2>
+      <p class="sec-desc">Os quatro status retonalizados pra família oceânica — turquesa pro confirmado, âmbar de sol na água pro pendente externo, coral de recife pro alerta, e névoa azulada pro que sumiu nas profundezas.</p>
+      <div class="grid ramp">
+        <div class="sw" style="background:#12B5A6"><span class="n" style="color:#06352F">Pago</span><span class="h" style="color:#06352F">#12B5A6</span></div>
+        <div class="sw" style="background:#E0A23C"><span class="n" style="color:#5A3F0E">Pagar depois</span><span class="h" style="color:#5A3F0E">#E0A23C</span></div>
+        <div class="sw" style="background:#E5564E"><span class="n" style="color:#5A1815">Pendente</span><span class="h" style="color:#5A1815">#E5564E</span></div>
+        <div class="sw" style="background:#6E8A9C"><span class="n" style="color:#1E2E38">Desistiu</span><span class="h" style="color:#1E2E38">#6E8A9C</span></div>
+      </div>
+    </section>
+
+    <section>
+      <span class="eyebrow">Tipografia</span>
+      <h2 class="sec-title">Vozes</h2>
+      <p class="sec-desc">Archivo carrega a personalidade da capa (pesada, larga, caixa-alta) — usada com parcimônia em títulos e números grandes. Inter cuida da leitura nas telas densas. JetBrains Mono pra CPF, número de quarto, QR e valores.</p>
+      <div class="type-row"><div class="meta">Archivo 800 · display / herói</div><div class="t-display">Encontristas</div></div>
+      <div class="type-row"><div class="meta">Archivo 800 · título de página</div><div class="t-h1">Painel do servo</div></div>
+      <div class="type-row"><div class="meta">Inter 400 · corpo</div><div class="t-body">Cada servo vê a função do dia, a equipe do mesmo gênero e as ministrações de cada ato — sem precisar procurar.</div></div>
+      <div class="type-row"><div class="meta">JetBrains Mono 500 · dados</div><div class="t-mono">CPF 123.456.789-00 · Quarto 05 · R$ 180,00</div></div>
+    </section>
+
+    <section>
+      <span class="eyebrow">Componentes</span>
+      <h2 class="sec-title">Duas profundidades</h2>
+      <p class="sec-desc">O app desce da superfície imersiva (login, boas-vindas, home do servo — escuro, com luz e brilho) para as águas de trabalho (telas densas — claras e azuladas, nunca branco puro, pra leitura no celular em pleno evento). Mesma paleta, dois ambientes.</p>
+      <div class="zones">
+
+        <div class="zone zone-deep">
+          <div class="zone-label">Superfície imersiva</div>
+          <div style="display:flex;gap:24px;align-items:flex-end;margin-bottom:18px">
+            <div><div class="stat-num">128</div><div class="stat-label">Encontristas</div></div>
+            <div><div class="stat-num" style="font-size:28px;color:#A4D6E8">R$ 9.4k</div><div class="stat-label">Arrecadado</div></div>
+          </div>
+          <div class="card-deep" style="margin-bottom:14px">
+            <div style="font-weight:600;color:#fff;margin-bottom:4px">Quarto 05 — Homens</div>
+            <div style="font-size:12px;color:#8FB3C8">8 de 12 vagas</div>
+            <div class="progress"><span></span></div>
+          </div>
+          <div style="margin-bottom:14px">
+            <span class="pill" style="background:rgba(18,181,166,.18);color:#7FE8DC">Pago</span>
+            <span class="pill" style="background:rgba(224,162,60,.18);color:#F2C988">Pagar depois</span>
+            <span class="pill" style="background:rgba(229,86,78,.18);color:#F6A6A1">Pendente</span>
+            <span class="pill" style="background:rgba(110,138,156,.22);color:#B6C7D2">Desistiu</span>
+          </div>
+          <input class="input-deep" placeholder="Buscar servo…" style="margin-bottom:12px" />
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary">Fazer check-in</button>
+            <button class="btn btn-ghost-deep">Exportar</button>
+          </div>
+        </div>
+
+        <div class="zone zone-light">
+          <div class="zone-label">Águas de trabalho</div>
+          <div style="display:flex;gap:24px;align-items:flex-end;margin-bottom:18px">
+            <div><div class="stat-num" style="color:#03213B">128</div><div class="stat-label" style="color:#416A87">Encontristas</div></div>
+            <div><div class="stat-num" style="font-size:28px;color:#146997">R$ 9.4k</div><div class="stat-label" style="color:#416A87">Arrecadado</div></div>
+          </div>
+          <div class="card-light" style="margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:600;color:#03213B">Ana Beatriz</span>
+              <span class="pill" style="background:#D9F6F2;color:#0A5F57">Pago</span>
+            </div>
+            <div style="font-size:12px;color:#416A87;margin-top:6px;font-family:var(--font-mono)">123.456.789-00 · Camiseta M</div>
+          </div>
+          <div style="margin-bottom:14px">
+            <span class="pill" style="background:#D9F6F2;color:#0A5F57">Pago</span>
+            <span class="pill" style="background:#FBEFD9;color:#7A5410">Pagar depois</span>
+            <span class="pill" style="background:#FBE4E3;color:#8A211C">Pendente</span>
+            <span class="pill" style="background:#E7EEF2;color:#36505F">Desistiu</span>
+          </div>
+          <input class="input-light" placeholder="Buscar encontrista…" style="margin-bottom:12px" />
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary">Salvar</button>
+            <button class="btn btn-ghost-light">Filtros</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <footer>Submergidos · design system v1 — cores ancoradas na capa do evento</footer>
+
+</body>
+</html>
