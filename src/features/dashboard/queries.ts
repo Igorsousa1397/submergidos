@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 //  roles isentas (isento_pagamento) não contabilizam.
 // ============================================================
 
-export const META_ENCONTRISTAS = 90;
+export const META_ENCONTRISTAS = 120;
 export const VALOR_PADRAO = 360; // R$ por encontrista
 
 const VALOR_COZINHA = 100;

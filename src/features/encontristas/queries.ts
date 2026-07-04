@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import type { EncontristaStatus, Sexo } from "@/lib/db-types";
+import type { Database } from "@/lib/database.types";
+
+// Os enums não são exportados soltos pelo gen:types — derivamos do Database.
+type EncontristaStatus = Database["public"]["Enums"]["encontrista_status"];
+type Sexo = Database["public"]["Enums"]["sexo"];
 
 export interface FiltrosEncontristas {
   sexo?: Sexo;
@@ -34,4 +38,16 @@ export async function getResumoFinanceiro() {
 
   if (error) throw new Error(`Erro ao carregar financeiro: ${error.message}`);
   return data;
+}
+
+// Células para o dropdown de filtro.
+export async function getCelulas() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("celulas")
+    .select("id, nome")
+    .order("nome", { ascending: true });
+
+  if (error) throw new Error(`Erro ao carregar células: ${error.message}`);
+  return data ?? [];
 }

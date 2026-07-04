@@ -1,36 +1,24 @@
-import { getEncontristas, getResumoFinanceiro } from "@/features/encontristas/queries";
-import { EncontristasStats } from "@/features/encontristas/components/encontristas-stats";
-import { EncontristaCard } from "@/features/encontristas/components/encontrista-card";
+import { getEncontristas, getCelulas } from "@/features/encontristas/queries";
+import { inscricoesBloqueadas } from "@/features/inscricoes/config";
+import {
+  EncontristasView,
+  type EncRow,
+  type Celula,
+} from "@/features/encontristas/components/encontristas-view";
 
-// Server Component: busca no servidor (RLS aplicado), passa pros componentes.
+// Server Component: busca no servidor (RLS aplicado), passa pro view client.
 export default async function EncontristasPage() {
-  const [encontristas, resumo] = await Promise.all([
+  const [encontristas, celulas, bloqueadas] = await Promise.all([
     getEncontristas(),
-    getResumoFinanceiro(),
+    getCelulas(),
+    inscricoesBloqueadas(),
   ]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5 p-4">
-      <header>
-        <h1 className="text-xl font-semibold text-slate-900">Encontristas</h1>
-        <p className="text-sm text-slate-500">{encontristas.length} no total</p>
-      </header>
-
-      <EncontristasStats
-        resumo={{
-          qtd_pagos: resumo.qtd_pagos ?? 0,
-          qtd_pagar_depois: resumo.qtd_pagar_depois ?? 0,
-          qtd_pendentes: resumo.qtd_pendentes ?? 0,
-          qtd_desistencias: resumo.qtd_desistencias ?? 0,
-          total_geral: resumo.total_geral ?? 0,
-        }}
-      />
-
-      <div className="space-y-2">
-        {encontristas.map((enc) => (
-          <EncontristaCard key={enc.id} enc={enc} />
-        ))}
-      </div>
-    </div>
+    <EncontristasView
+      encontristas={encontristas as EncRow[]}
+      celulas={celulas as Celula[]}
+      inscricoesBloqueadas={bloqueadas}
+    />
   );
 }
