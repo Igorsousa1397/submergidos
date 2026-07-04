@@ -123,6 +123,14 @@ export function TermoInscricao({
       fotoDoc: fotoFrente,
       fotoVerso: precisaVerso ? fotoVerso : null,
       fotoSelfie: fotoRosto,
+      signatario: {
+        nome: dados.nome,
+        cpf: dados.cpf ?? null,
+        igreja: dados.igreja ?? null,
+        autorizaImagem: dados.autorizaImagem ?? null,
+        sexo: dados.sexo ?? null,
+        termoTexto: TERMO_TEXTO,
+      },
     });
 
     setSaving(false);

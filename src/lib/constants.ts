@@ -1,4 +1,4 @@
-import type { EncontristaStatus, Sexo } from "@/lib/database.types";
+import type { EncontristaStatus, Sexo } from "@/lib/db-types";
 
 export type RoleSlug =
   | "admin"

@@ -1,4 +1,19 @@
 import { createClient } from "@/lib/supabase/client";
+import { gerarTermoPDFBlob } from "@/lib/termo-pdf";
+
+// Converte um File em dataURL (para embutir imagens no PDF).
+function fileParaDataURL(file: File): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith("image/")) {
+      resolve(null); // PDF ou outro tipo: não embute imagem
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
 
 // ============================================================
 //  Camada de dados do Termo digital (Submergidos)
@@ -103,30 +118,43 @@ export function comprimirImagemSeNecessario(file: File): Promise<File> {
   });
 }
 
-// ---- upload de um arquivo no bucket privado "termos" ----
-//  Caminho: {encId}/documento_frente.<ext> | documento_verso.<ext> | selfie.jpg
-//  Retorna o PATH (não a URL) — o bucket é privado; admin lê depois.
-type NomeArquivo = "documento_frente" | "documento_verso" | "selfie";
+// ---- upload de um arquivo/blob no bucket privado "termos" ----
+//  Caminho: {encId}/{nomeBase}-{timestamp}.<ext> (único por envio → nunca colide,
+//  não precisa de upsert nem de SELECT no storage). Retorna o PATH.
+type NomeArquivo = "documento_frente" | "documento_verso" | "selfie" | "termo";
 
 async function uploadArquivo(
   encId: string,
-  file: File,
+  file: Blob,
   nomeBase: NomeArquivo,
+  contentType: string,
 ): Promise<string> {
   const supabase = createClient();
   const ext =
-    nomeBase === "selfie"
-      ? "jpg"
-      : file.type === "application/pdf"
-        ? "pdf"
-        : "jpg";
+    nomeBase === "termo"
+      ? "pdf"
+      : nomeBase === "selfie"
+        ? "jpg"
+        : contentType === "application/pdf"
+          ? "pdf"
+          : "jpg";
   const path = `${encId}/${nomeBase}-${Date.now()}.${ext}`;
   const { error } = await supabase.storage
-  .from("termos")
-  .upload(path, file, { upsert: false, contentType: file.type });
+    .from("termos")
+    .upload(path, file, { upsert: false, contentType });
   if (error) throw error;
   return path;
 }
+
+// Dados do signatário para montar o PDF (vêm do formulário/RPC).
+export type DadosSignatario = {
+  nome: string;
+  cpf: string | null;
+  igreja: string | null;
+  autorizaImagem: string | null;
+  sexo?: string | null;
+  termoTexto: string;
+};
 
 export type DadosAssinatura = {
   encId: string;
@@ -137,6 +165,7 @@ export type DadosAssinatura = {
   fotoDoc: File; // frente (obrigatória)
   fotoVerso: File | null; // opcional
   fotoSelfie: File;
+  signatario: DadosSignatario; // para o PDF
 };
 
 export type ResultadoAssinatura =
@@ -148,16 +177,23 @@ export async function assinarTermo(
   dados: DadosAssinatura,
 ): Promise<ResultadoAssinatura> {
   const supabase = createClient();
-  const { encId, endereco, cep, numero, complemento, fotoDoc, fotoVerso, fotoSelfie } =
+  const { encId, endereco, cep, numero, complemento, fotoDoc, fotoVerso, fotoSelfie, signatario } =
     dados;
 
   let docPath: string;
   let versoPath: string | null = null;
   let selfiePath: string;
 
+  // guardamos os dataURLs das imagens para embutir no PDF
+  let docDataUrl: string | null = null;
+  let docVersoDataUrl: string | null = null;
+  let selfieDataUrl: string | null = null;
+  const docEhPdf = fotoDoc.type === "application/pdf";
+
   try {
     const docComprimido = await comprimirImagemSeNecessario(fotoDoc);
-    docPath = await uploadArquivo(encId, docComprimido, "documento_frente");
+    docPath = await uploadArquivo(encId, docComprimido, "documento_frente", docComprimido.type);
+    docDataUrl = await fileParaDataURL(docComprimido);
   } catch {
     return {
       ok: false,
@@ -168,7 +204,8 @@ export async function assinarTermo(
   if (fotoVerso) {
     try {
       const versoComprimido = await comprimirImagemSeNecessario(fotoVerso);
-      versoPath = await uploadArquivo(encId, versoComprimido, "documento_verso");
+      versoPath = await uploadArquivo(encId, versoComprimido, "documento_verso", versoComprimido.type);
+      docVersoDataUrl = await fileParaDataURL(versoComprimido);
     } catch {
       return {
         ok: false,
@@ -179,7 +216,8 @@ export async function assinarTermo(
 
   try {
     const selfieComprimida = await comprimirImagemSeNecessario(fotoSelfie);
-    selfiePath = await uploadArquivo(encId, selfieComprimida, "selfie");
+    selfiePath = await uploadArquivo(encId, selfieComprimida, "selfie", selfieComprimida.type);
+    selfieDataUrl = await fileParaDataURL(selfieComprimida);
   } catch {
     return {
       ok: false,
@@ -187,15 +225,50 @@ export async function assinarTermo(
     };
   }
 
+  // Gera o PDF do termo e sobe no Storage (não baixa no dispositivo).
+  //  Falha no PDF NÃO impede a assinatura — só loga; o termo continua válido.
+  let pdfPath: string | null = null;
+  try {
+    const assinadoEm = new Date().toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const blob = gerarTermoPDFBlob({
+      nome: signatario.nome,
+      cpf: signatario.cpf,
+      igreja: signatario.igreja,
+      autorizaImagem: signatario.autorizaImagem,
+      sexo: signatario.sexo ?? null,
+      endereco: endereco.trim() || null,
+      cep: cep.replace(/\D/g, "") || null,
+      numero: numero.trim() || null,
+      complemento: complemento.trim() || null,
+      assinadoEm,
+      termoTexto: signatario.termoTexto,
+      docDataUrl,
+      docEhPdf,
+      docVersoDataUrl,
+      selfieDataUrl,
+    });
+    pdfPath = await uploadArquivo(encId, blob, "termo", "application/pdf");
+  } catch {
+    // PDF é um "nice to have" para o admin; não bloqueia a assinatura.
+    pdfPath = null;
+  }
+
   const { data: assinou, error } = await supabase.rpc("assinar_termo", {
     p_enc_id: encId,
     p_endereco: endereco.trim(),
-    p_cep: cep.replace(/\D/g, ""),        // sem "|| null" — manda string vazia se não tiver
+    p_cep: cep.replace(/\D/g, ""),
     p_numero: numero.trim(),
-    p_complemento: complemento.trim(),     // sem "|| null"
+    p_complemento: complemento.trim(),
     p_doc_path: docPath,
     p_doc_verso_path: versoPath ?? "",
     p_selfie_path: selfiePath,
+    p_pdf_path: pdfPath ?? "",
   });
 
   if (error) {

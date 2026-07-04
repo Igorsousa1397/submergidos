@@ -16,7 +16,15 @@ export default async function EncontristasPage() {
         <p className="text-sm text-slate-500">{encontristas.length} no total</p>
       </header>
 
-      <EncontristasStats resumo={resumo} />
+      <EncontristasStats
+        resumo={{
+          qtd_pagos: resumo.qtd_pagos ?? 0,
+          qtd_pagar_depois: resumo.qtd_pagar_depois ?? 0,
+          qtd_pendentes: resumo.qtd_pendentes ?? 0,
+          qtd_desistencias: resumo.qtd_desistencias ?? 0,
+          total_geral: resumo.total_geral ?? 0,
+        }}
+      />
 
       <div className="space-y-2">
         {encontristas.map((enc) => (

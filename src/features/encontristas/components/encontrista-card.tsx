@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { STATUS_ENCONTRISTA, SEXO_LABEL } from "@/lib/constants";
 import { atualizarStatus } from "@/features/encontristas/actions";
-import type { Database, EncontristaStatus } from "@/lib/database.types";
+import type { Database } from "@/lib/database.types";
+import type { EncontristaStatus } from "@/lib/db-types";
 
 type Encontrista = Database["public"]["Tables"]["encontristas"]["Row"];
 

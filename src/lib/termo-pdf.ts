@@ -1,13 +1,17 @@
 import jsPDF from "jspdf";
 
 // ============================================================
-//  Geração on-demand do PDF do termo (Submergidos)
-//  Portado do exportarPDF() do "Encontro com Deus":
-//   - mesmo layout (cabeçalho cinza, dados, termo, anexos, rodapé)
-//   - REMOVIDO: RG e Endereço (decisão do Igor)
-//   - TROCADO: "Encontro com Deus" → "Submergidos"; datas → 4,5,6 set 2026
-//   - assinatura entra embutida (base64 do canvas), antes dos anexos
-//  As imagens (doc/selfie) chegam como dataURL já resolvido pela página.
+//  Geração do PDF do termo (Submergidos)
+//  Portado do exportarPDF() do "Encontro com Deus", adaptado ao
+//  fluxo novo:
+//   - aceite por CHECKBOX (não canvas) → sem imagem de assinatura;
+//     entra o texto "Aceito eletronicamente".
+//   - ENDEREÇO voltou (colunas separadas) → aparece nos dados.
+//   - RG: removido.
+//   - Marca: "Submergidos" / datas 4,5,6 set 2026.
+//   - NÃO baixa no dispositivo: retorna um Blob para subir no Storage.
+//  As imagens (doc frente/verso/selfie) chegam como dataURL já
+//  resolvido pela camada de dados (termo.ts).
 // ============================================================
 
 export type TermoPdfDados = {
@@ -16,15 +20,20 @@ export type TermoPdfDados = {
   igreja: string | null;
   autorizaImagem: string | null;
   sexo?: string | null;
+  endereco: string | null;
+  cep: string | null;
+  numero: string | null;
+  complemento: string | null;
   assinadoEm: string; // texto já formatado
   termoTexto: string;
-  assinaturaDataUrl: string | null; // PNG base64 do canvas
-  docDataUrl: string | null; // dataURL da foto do documento (null se PDF)
+  docDataUrl: string | null; // dataURL da foto do documento (frente)
   docEhPdf: boolean;
+  docVersoDataUrl: string | null; // dataURL do verso (opcional)
   selfieDataUrl: string | null;
 };
 
-export function exportarTermoPDF(termo: TermoPdfDados) {
+// Gera o PDF e devolve como Blob (para upload). Não baixa no dispositivo.
+export function gerarTermoPDFBlob(termo: TermoPdfDados): Blob {
   const pdf = new jsPDF();
   const margin = 20;
   const pageW = 210;
@@ -79,7 +88,7 @@ export function exportarTermoPDF(termo: TermoPdfDados) {
   y += 2;
   hr();
 
-  // Dados do signatário (sem RG / Endereço)
+  // Dados do signatário (com Endereço; sem RG)
   line("DADOS DO SIGNATÁRIO", 10, true);
   y += 2;
 
@@ -97,11 +106,22 @@ export function exportarTermoPDF(termo: TermoPdfDados) {
     y += lines.length * 6 + 2;
   };
 
+  // Endereço montado numa linha só
+  const enderecoCompleto = [
+    termo.endereco,
+    termo.numero ? `nº ${termo.numero}` : null,
+    termo.complemento,
+    termo.cep ? `CEP ${termo.cep}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
   campo("Nome", termo.nome);
   campo("CPF", termo.cpf);
-  campo("Autorização de uso de imagem", termo.autorizaImagem);
   if (termo.sexo) campo("Sexo", termo.sexo);
   campo("Igreja", termo.igreja || "—");
+  campo("Endereço", enderecoCompleto || "—");
+  campo("Autorização de uso de imagem", termo.autorizaImagem);
 
   y += 2;
   hr();
@@ -121,30 +141,31 @@ export function exportarTermoPDF(termo: TermoPdfDados) {
       y = 20;
     }
     pdf.text(lines, margin, y);
-    y += lines.length * 6 + 2;
+    y += lines.length * 6 + 4;
   });
 
-  y += 8;
-  if (y + 50 > 285) {
+  y += 4;
+  if (y > 250) {
     pdf.addPage();
     y = 20;
   }
   hr();
 
-  // Assinatura (base64 do canvas) embutida
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "normal");
+  // Aceite (checkbox) — sem imagem de assinatura
+  pdf.setFontSize(11);
+  pdf.setFont("helvetica", "bold");
   pdf.setTextColor(30, 30, 30);
-  pdf.text(`Assinado digitalmente por: ${termo.nome}`, margin, y);
+  pdf.text(`Aceito eletronicamente por: ${termo.nome}`, margin, y);
   y += 6;
-  if (termo.assinaturaDataUrl) {
-    try {
-      pdf.addImage(termo.assinaturaDataUrl, "PNG", margin, y, 70, 30);
-      y += 34;
-    } catch {
-      /* ignora assinatura inválida */
-    }
-  }
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(80, 80, 80);
+  pdf.text(
+    'O signatário marcou "Li e concordo" com todos os termos acima.',
+    margin,
+    y,
+  );
+  y += 6;
   pdf.setTextColor(120, 120, 120);
   pdf.text(
     `Assinado em: ${termo.assinadoEm || "—"} pelo app Submergidos`,
@@ -152,12 +173,8 @@ export function exportarTermoPDF(termo: TermoPdfDados) {
     y,
   );
 
-  // Anexos (documento + selfie)
-  const addImg = (
-    dataUrl: string | null,
-    titulo: string,
-    isPdf = false,
-  ) => {
+  // Anexos (documento frente/verso + selfie)
+  const addImg = (dataUrl: string | null, titulo: string, isPdf = false) => {
     if (isPdf) {
       pdf.addPage();
       let yF = 20;
@@ -187,7 +204,8 @@ export function exportarTermoPDF(termo: TermoPdfDados) {
     }
   };
 
-  addImg(termo.docDataUrl, "DOCUMENTO DE IDENTIDADE", termo.docEhPdf);
+  addImg(termo.docDataUrl, "DOCUMENTO DE IDENTIDADE (FRENTE)", termo.docEhPdf);
+  addImg(termo.docVersoDataUrl, "DOCUMENTO DE IDENTIDADE (VERSO)", false);
   addImg(termo.selfieDataUrl, "SELFIE DE VALIDAÇÃO", false);
 
   // Rodapé em todas as páginas
@@ -202,5 +220,5 @@ export function exportarTermoPDF(termo: TermoPdfDados) {
     });
   }
 
-  pdf.save(`termo_${termo.nome.trim().replace(/ /g, "_")}.pdf`);
+  return pdf.output("blob");
 }
