@@ -5,12 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { criarInscricao } from "@/features/inscricoes/actions";
 import { CELULAS, IGREJAS } from "@/features/inscricoes/options";
-import { buscarParaTermo } from "@/features/termo/termo";
-import { TermoInscricao, type TermoDados } from "@/features/termo/termo-inscricao";
 
 type Sim = "Sim" | "Não" | "";
 
 interface FormState {
+  passouPeniel: Sim;
   igreja: string;
   igrejaCustom: string;
   nome: string;
@@ -29,6 +28,7 @@ interface FormState {
 }
 
 const VAZIO: FormState = {
+  passouPeniel: "",
   igreja: "",
   igrejaCustom: "",
   nome: "",
@@ -55,13 +55,6 @@ const WHATSAPP =
   );
 const SITIO = "https://cemine.wixsite.com/world";
 
-// idade mínima 14 anos
-const maxNascimento = (() => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - 14);
-  return d.toISOString().split("T")[0];
-})();
-
 const maskCpf = (v: string) =>
   v
     .replace(/\D/g, "")
@@ -76,6 +69,27 @@ const maskTel = (v: string) =>
     .slice(0, 11)
     .replace(/(\d{2})(\d)/, "($1) $2")
     .replace(/(\d{5})(\d{1,4})$/, "$1-$2");
+
+// Data livre DD/MM/AAAA (só dígitos, insere as barras)
+const maskData = (v: string) =>
+  v
+    .replace(/\D/g, "")
+    .slice(0, 8)
+    .replace(/(\d{2})(\d)/, "$1/$2")
+    .replace(/(\d{2})(\d)/, "$1/$2");
+
+// Converte "DD/MM/AAAA" -> "AAAA-MM-DD" (formato que o action espera).
+// Retorna "" se a data não estiver completa/válida.
+const dataBrParaIso = (v: string): string => {
+  const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return "";
+  const [, dd, mm, aaaa] = m;
+  const d = Number(dd);
+  const mo = Number(mm);
+  const y = Number(aaaa);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1900) return "";
+  return `${aaaa}-${mm}-${dd}`;
+};
 
 const inputCls =
   "w-full rounded-control border border-white/10 bg-breu px-4 py-3 text-luz placeholder:text-corrente outline-none transition focus:border-mar focus:ring-2 focus:ring-mar/30";
@@ -174,16 +188,24 @@ export default function InscricaoPage() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
-  // Fluxo inline: após inscrever, mostramos o termo na própria página.
-  const [encId, setEncId] = useState<string | null>(null);
-  const [docWhats, setDocWhats] = useState("");
-  const [termoDados, setTermoDados] = useState<TermoDados | null>(null);
-
   const set = (patch: Partial<FormState>) =>
     setForm((f) => ({ ...f, ...patch }));
 
   const enviar = async () => {
     if (enviando) return;
+
+    // Precisa ter passado pelo Peniel
+    if (form.passouPeniel !== "Sim") {
+      setErro("Responda se você já passou pelo Encontro Peniel.");
+      return;
+    }
+
+    // Data de nascimento livre: valida e converte DD/MM/AAAA -> YYYY-MM-DD
+    const nascimentoIso = dataBrParaIso(form.nascimento);
+    if (!nascimentoIso) {
+      setErro("Informe uma data de nascimento válida (DD/MM/AAAA).");
+      return;
+    }
 
     // Obrigatórios (feedback rápido no client)
     if (!form.temMedicamento) {
@@ -211,7 +233,7 @@ export default function InscricaoPage() {
       igrejaCustom: form.igrejaCustom,
       nome: form.nome,
       cpf: form.cpf,
-      nascimento: form.nascimento,
+      nascimento: nascimentoIso,
       sexo: form.sexo,
       whatsapp: form.whatsapp,
       celula: form.celula,
@@ -223,55 +245,53 @@ export default function InscricaoPage() {
       doenca: form.temDoenca === "Sim" ? form.doenca : null,
     });
 
-    if (!res.ok) {
-      setEnviando(false);
-      setErro(res.erro);
-      return;
-    }
-
-    // Inscrição salva. Recupera o id (via RPC pública) para abrir o termo inline.
-    const busca = await buscarParaTermo(res.whatsapp);
     setEnviando(false);
-
-    if (busca.ok) {
-      setEncId(busca.enc.id);
-      setDocWhats(res.whatsapp);
-      setTermoDados({
-        nome: res.nome,
-        cpf: form.cpf,
-        sexo: form.sexo === "feminino" ? "Feminino" : "Masculino",
-        igreja:
-          form.igreja === "Outra" ? form.igrejaCustom || "Outra" : form.igreja,
-        autorizaImagem: form.autorizaImagem || null,
-      });
+    if (res.ok) {
+      window.location.href = `/pagamento?doc=${res.whatsapp}`;
       return;
     }
-
-    // Fallback improvável: inscrição gravou mas a RPC não achou.
-    setErro(
-      "Inscrição salva! Para assinar o termo, acesse \"Já se inscreveu?\" e informe seu CPF ou WhatsApp.",
-    );
+    setErro(res.erro);
   };
 
-  // ===== Etapa 2: Termo inline (após inscrever, antes do pagamento) =====
-  if (encId && termoDados) {
+  // ===== Bloqueio: não passou pelo Peniel =====
+  if (form.passouPeniel === "Não") {
     return (
-      <TermoInscricao
-        encId={encId}
-        dados={termoDados}
-        onAssinado={() => {
-          window.location.href = `/pagamento?doc=${docWhats}`;
-        }}
-        onVoltar={() => {
-          // volta pro formulário sem perder os dados digitados
-          setEncId(null);
-          setTermoDados(null);
-        }}
-      />
+      <div
+        data-zone="deep"
+        className="flex min-h-screen flex-col items-center justify-center bg-abismo px-6 text-center text-luz"
+      >
+        <div className="w-full max-w-md space-y-5">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-aviso/30 bg-aviso/10 text-3xl">
+            🌊
+          </div>
+          <h1 className="font-display text-2xl font-extrabold text-luz">
+            Ainda não é a sua hora de mergulhar
+          </h1>
+          <p className="text-sm leading-relaxed text-corrente">
+            O <strong className="text-luz">Submergidos</strong> é o próximo nível para quem
+            já viveu o <strong className="text-luz">Encontro Peniel</strong>. Por isso, só é
+            possível participar do Submergidos se você já tiver passado pelo Peniel.
+          </p>
+          <p className="text-sm leading-relaxed text-corrente">
+            Fale com a liderança da sua célula para participar do próximo Peniel — e nos
+            vemos no Submergidos em breve!
+          </p>
+          <div className="space-y-2 pt-2">
+            <a
+              href={WHATSAPP}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-control border border-white/10 py-3 text-sm font-semibold text-corrente transition hover:text-luz"
+            >
+              Falar com a liderança
+            </a>
+          </div>
+        </div>
+      </div>
     );
   }
 
-  // ===== Etapa 1: Formulário =====
+  // ===== Formulário =====
   return (
     <div data-zone="deep" className="min-h-screen bg-abismo pb-16 text-luz">
       {/* topo */}
@@ -304,6 +324,13 @@ export default function InscricaoPage() {
             Conheça o sítio
           </a>
         </div>
+
+        <Label>Já passou pelo Encontro Peniel? *</Label>
+        <Chips
+          options={["Sim", "Não"]}
+          value={form.passouPeniel}
+          onPick={(v) => set({ passouPeniel: v as Sim })}
+        />
 
         <Label>Igreja *</Label>
         <Chips
@@ -339,11 +366,11 @@ export default function InscricaoPage() {
 
         <Label>Data de nascimento *</Label>
         <input
-          type="date"
           className={inputCls}
-          max={maxNascimento}
+          inputMode="numeric"
+          placeholder="DD/MM/AAAA"
           value={form.nascimento}
-          onChange={(e) => set({ nascimento: e.target.value })}
+          onChange={(e) => set({ nascimento: maskData(e.target.value) })}
         />
 
         <Label>Sexo *</Label>
