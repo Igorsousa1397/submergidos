@@ -178,6 +178,7 @@ export type Database = {
           nome: string
           onibus_id: string | null
           pagamento_id: string | null
+          pagar_depois_data: string | null
           sexo: Database["public"]["Enums"]["sexo"] | null
           status: Database["public"]["Enums"]["encontrista_status"]
           termo_assinado_at: string | null
@@ -211,6 +212,7 @@ export type Database = {
           nome: string
           onibus_id?: string | null
           pagamento_id?: string | null
+          pagar_depois_data?: string | null
           sexo?: Database["public"]["Enums"]["sexo"] | null
           status?: Database["public"]["Enums"]["encontrista_status"]
           termo_assinado_at?: string | null
@@ -244,6 +246,7 @@ export type Database = {
           nome?: string
           onibus_id?: string | null
           pagamento_id?: string | null
+          pagar_depois_data?: string | null
           sexo?: Database["public"]["Enums"]["sexo"] | null
           status?: Database["public"]["Enums"]["encontrista_status"]
           termo_assinado_at?: string | null
@@ -634,6 +637,7 @@ export type Database = {
           p_enc_id: string
           p_endereco: string
           p_numero: string
+          p_pdf_path: string
           p_selfie_path: string
         }
         Returns: boolean

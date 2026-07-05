@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { atualizarStatus, alternarInscricoes } from "../actions";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { atualizarStatus, alternarInscricoes, salvarPagarDepois } from "../actions";
 
 type Status = "pago" | "pendente" | "pagar_depois" | "desistiu";
 type Sexo = "masculino" | "feminino" | null;
@@ -17,9 +17,11 @@ export interface EncRow {
   status: Status;
   chegou: boolean;
   emergencia: string | null;
+  whatsapp: string | null;
   medicamento: string | null;
   doenca_cronica: string | null;
   acordo_valor: number | null;
+  pagar_depois_data: string | null;
   created_at: string | null;
 }
 
@@ -34,6 +36,10 @@ const STATUS_LABEL: Record<Status, string> = {
   pagar_depois: "Pagar depois",
   desistiu: "Desistiu",
 };
+
+// status que o admin pode setar à mão — "pago" NÃO entra aqui:
+// o pago é confirmado exclusivamente pelo webhook do Mercado Pago.
+const STATUS_MANUAL: Status[] = ["pendente", "pagar_depois", "desistiu"];
 
 // cor da borda esquerda do card por status
 const STATUS_COR: Record<Status, string> = {
@@ -56,6 +62,40 @@ const fmtNasc = (iso: string | null) => {
   return `${d}/${m}/${y}`;
 };
 
+// monta o link do WhatsApp: limpa a máscara e prefixa 55 quando necessário
+const waLink = (raw: string) => {
+  const d = raw.replace(/\D/g, "");
+  const num = d.startsWith("55") && d.length >= 12 ? d : `55${d}`;
+  return `https://wa.me/${num}`;
+};
+
+// URL de produção do app (usada no link de pagamento enviado ao encontrista)
+const APP_URL = "https://submergidos.vercel.app";
+
+// link do WhatsApp com mensagem pronta conforme o status:
+// pendente -> cobra o pagamento; pago -> manda o link do QR Code de acesso.
+const contatoHref = (e: { nome: string; whatsapp: string | null; status: Status }) => {
+  const base = waLink(e.whatsapp ?? "");
+  const primeiro = e.nome.trim().split(/\s+/)[0];
+  const link = `${APP_URL}/pagamento?doc=${e.whatsapp ?? ""}`;
+
+  let msg = "";
+  if (e.status === "pendente") {
+    msg =
+      `Olá, ${primeiro}! 🌊\n\n` +
+      `Recebemos a sua inscrição no *Submergidos*! Só que ela ainda está *pendente* — a vaga só é confirmada depois do pagamento.\n\n` +
+      `Vai ser um final de semana *extraordinário*, e a gente quer muito você com a gente pra mergulhar no próximo nível.\n\n` +
+      `Garanta a sua vaga por aqui: ${link}`;
+  } else if (e.status === "pago") {
+    msg =
+      `Olá, ${primeiro}! 🌊\n\n` +
+      `Boa notícia: o seu pagamento foi confirmado e a sua vaga no *Submergidos* está garantida! 🙌\n\n` +
+      `Vai ser um final de semana *extraordinário*. Acesse aqui o seu *QR Code* de acesso ao encontro: ${link}`;
+  }
+
+  return msg ? `${base}?text=${encodeURIComponent(msg)}` : base;
+};
+
 export function EncontristasView({
   encontristas,
   celulas,
@@ -70,7 +110,16 @@ export function EncontristasView({
   const [busca, setBusca] = useState("");
   const [expandido, setExpandido] = useState<string | null>(null);
   const [bloqueadas, setBloqueadas] = useState(inscricoesBloqueadas);
+  const [dataDrafts, setDataDrafts] = useState<Record<string, string>>({});
+  const [editando, setEditando] = useState<Record<string, boolean>>({});
   const [pending, startTransition] = useTransition();
+
+  // fonte de verdade da UI: estado local, atualizado de forma otimista.
+  // assim mudar status não precisa revalidar a rota (evita o flash da sidebar).
+  const [rows, setRows] = useState<EncRow[]>(encontristas);
+  useEffect(() => {
+    setRows(encontristas);
+  }, [encontristas]);
 
   const nomeCelula = useMemo(
     () => new Map(celulas.map((c) => [c.id, c.nome])),
@@ -80,27 +129,40 @@ export function EncontristasView({
   // ---- stats (total geral e por status, sobre TODOS, não filtrado) ----
   const stats = useMemo(() => {
     const s = { total: 0, pago: 0, pendente: 0, pagar_depois: 0, desistiu: 0 };
-    for (const e of encontristas) {
+    for (const e of rows) {
       s.total += 1;
       s[e.status] += 1;
     }
     return s;
-  }, [encontristas]);
+  }, [rows]);
 
   // ---- lista filtrada ----
   const lista = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    return encontristas.filter((e) => {
+    return rows.filter((e) => {
       if (aba !== "todos" && e.sexo !== aba) return false;
       if (celulaId && e.celula_id !== celulaId) return false;
       if (q && !e.nome.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [encontristas, aba, celulaId, busca]);
+  }, [rows, aba, celulaId, busca]);
 
   const mudarStatus = (id: string, status: Status) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
     startTransition(async () => {
       await atualizarStatus(id, status);
+    });
+  };
+
+  // salva a data combinada de "pagar depois" (grava a data e mantém o status)
+  const salvarData = (id: string, data: string) => {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.id === id ? { ...r, status: "pagar_depois", pagar_depois_data: data || null } : r,
+      ),
+    );
+    startTransition(async () => {
+      await salvarPagarDepois(id, data);
     });
   };
 
@@ -253,6 +315,9 @@ export function EncontristasView({
           lista.map((e) => {
             const aberto = expandido === e.id;
             const celula = e.celula_id ? nomeCelula.get(e.celula_id) ?? "—" : "Não tenho célula";
+            // edição do campo de data: começa liberado se ainda não há data salva
+            const editando_ = editando[e.id] ?? !e.pagar_depois_data;
+            const dataVal = dataDrafts[e.id] ?? (e.pagar_depois_data ?? "");
             return (
               <div
                 key={e.id}
@@ -268,6 +333,9 @@ export function EncontristasView({
                     <p className="truncate font-semibold text-luz">{e.nome}</p>
                     <p className="truncate text-xs text-corrente">
                       {celula} · {fmtData(e.created_at)}
+                      {e.status === "pagar_depois" && e.pagar_depois_data
+                        ? ` · pagar até ${fmtNasc(e.pagar_depois_data)}`
+                        : ""}
                     </p>
                   </div>
                   <span
@@ -290,11 +358,12 @@ export function EncontristasView({
                       <Campo label="Doença crônica" valor={e.doenca_cronica ?? "Não"} />
                     </div>
 
-                    {/* mudar status */}
+                    {/* mudar status — some quando pago (a pill + borda verde já bastam) */}
+                    {e.status !== "pago" && (
                     <div>
                       <p className="mb-2 text-xs uppercase tracking-wide text-corrente">Status</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(Object.keys(STATUS_LABEL) as Status[]).map((st) => (
+                      <div className="grid grid-cols-1 gap-2">
+                        {STATUS_MANUAL.map((st) => (
                           <button
                             key={st}
                             onClick={() => mudarStatus(e.id, st)}
@@ -310,7 +379,72 @@ export function EncontristasView({
                           </button>
                         ))}
                       </div>
+
+                      {/* campo de data — só quando "Pagar depois" está ativo */}
+                      {e.status === "pagar_depois" && (
+                        <div
+                          className="mt-3 rounded-control border p-3"
+                          style={{
+                            borderColor: "rgba(224,162,60,0.4)",
+                            background: "rgba(224,162,60,0.08)",
+                          }}
+                        >
+                          <p
+                            className="mb-2 text-[11px] uppercase tracking-wide"
+                            style={{ color: "#e0a23c" }}
+                          >
+                            Data combinada para pagamento
+                          </p>
+                          <div className="flex gap-2">
+                            <input
+                              type="date"
+                              value={dataVal}
+                              disabled={!editando_}
+                              onChange={(ev) =>
+                                setDataDrafts((d) => ({ ...d, [e.id]: ev.target.value }))
+                              }
+                              style={{ colorScheme: "dark" }}
+                              className="flex-1 rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-2 text-sm text-luz outline-none focus:border-raso disabled:opacity-60"
+                            />
+                            {editando_ ? (
+                              <button
+                                onClick={() => {
+                                  salvarData(e.id, dataVal);
+                                  setEditando((d) => ({ ...d, [e.id]: false }));
+                                }}
+                                disabled={pending || !dataVal}
+                                className="rounded-control px-4 py-2 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50"
+                                style={{ background: "#e0a23c" }}
+                              >
+                                Salvar
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setEditando((d) => ({ ...d, [e.id]: true }))}
+                                className="rounded-control border px-4 py-2 text-sm font-semibold transition active:scale-[0.98]"
+                                style={{ borderColor: "#e0a23c", color: "#e0a23c" }}
+                              >
+                                Editar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
+                    )}
+
+                    {/* entrar em contato (WhatsApp) — só se tiver número */}
+                    {e.whatsapp && (
+                      <a
+                        href={contatoHref(e)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full rounded-control border py-3 text-center text-sm font-semibold transition active:scale-[0.98]"
+                        style={{ borderColor: "#12b5a6", color: "#12b5a6" }}
+                      >
+                        {e.status === "pago" ? "Reenviar QR-code" : "Entrar em contato"} — {e.whatsapp}
+                      </a>
+                    )}
                   </div>
                 )}
               </div>

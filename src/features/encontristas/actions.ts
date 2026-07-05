@@ -17,7 +17,6 @@ export async function atualizarStatus(id: string, status: EncontristaStatus) {
     .eq("id", id);
 
   if (error) return { ok: false, erro: error.message };
-  revalidatePath("/encontristas");
   return { ok: true };
 }
 
@@ -45,4 +44,12 @@ export async function alternarInscricoes(bloquear: boolean) {
   if (error) return { ok: false, erro: error.message };
   revalidatePath("/encontristas");
   return { ok: true };
+}
+
+export async function salvarPagarDepois(id: string, data: string) {
+  const supabase = await createClient();
+  await supabase
+    .from("encontristas")
+    .update({ status: "pagar_depois", pagar_depois_data: data || null })
+    .eq("id", id);
 }
