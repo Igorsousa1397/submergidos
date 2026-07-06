@@ -67,7 +67,7 @@ export async function getDashboard(): Promise<DashboardData> {
   const total = resumo?.total_geral ?? 0;
 
   // ---- contadores de topo + dados brutos p/ agregações ----
-  const [checkin, quartos, ocorrencias, onibusList, servos, roles, encs, celulas] =
+  const [checkin, quartos, ocorrencias, onibusList, servos, roles, encs] =
     await Promise.all([
       supabase.from("encontristas").select("id", { count: "exact", head: true }).eq("chegou", true),
       supabase.from("quartos").select("id", { count: "exact", head: true }),
@@ -75,8 +75,7 @@ export async function getDashboard(): Promise<DashboardData> {
       supabase.from("onibus").select("id"),
       supabase.from("profiles").select("role, pago, ativo"),
       supabase.from("roles").select("slug, isento_pagamento"),
-      supabase.from("encontristas").select("created_at, celula_id"),
-      supabase.from("celulas").select("id, nome"),
+      supabase.from("encontristas").select("created_at, celula"),
     ]);
 
   const checkinFeitos = checkin.count ?? 0;
@@ -134,12 +133,9 @@ export async function getDashboard(): Promise<DashboardData> {
     .sort((a, b) => a.dia.localeCompare(b.dia));
 
   // ---- por célula ----
-  const nomePorId = new Map<string, string>(
-    (celulas.data ?? []).map((c) => [c.id, c.nome]),
-  );
   const contagemCel = new Map<string, number>();
   for (const e of encs.data ?? []) {
-    const nome = e.celula_id ? nomePorId.get(e.celula_id) ?? "—" : "Sem célula";
+    const nome = e.celula || "Sem célula";
     contagemCel.set(nome, (contagemCel.get(nome) ?? 0) + 1);
   }
   const porCelula: CelulaCount[] = [...contagemCel.entries()]

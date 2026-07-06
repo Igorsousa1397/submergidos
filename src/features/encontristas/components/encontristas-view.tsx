@@ -13,7 +13,7 @@ export interface EncRow {
   nascimento: string | null;
   sexo: Sexo;
   camiseta: string | null;
-  celula_id: string | null;
+  celula: string | null;
   status: Status;
   chegou: boolean;
   emergencia: string | null;
@@ -121,10 +121,15 @@ export function EncontristasView({
     setRows(encontristas);
   }, [encontristas]);
 
-  const nomeCelula = useMemo(
-    () => new Map(celulas.map((c) => [c.id, c.nome])),
-    [celulas],
-  );
+  // A tabela `celulas` está vazia; a célula vive como texto na coluna `celula`.
+  // O filtro é montado a partir das células presentes nos cadastros
+  // (e de nomes vindos da prop, caso a tabela venha a ser populada).
+  const celulasPresentes = useMemo(() => {
+    const nomes = new Set<string>();
+    for (const c of celulas) if (c.nome) nomes.add(c.nome);
+    for (const e of rows) if (e.celula) nomes.add(e.celula);
+    return [...nomes].sort((a, b) => a.localeCompare(b));
+  }, [rows, celulas]);
 
   // ---- stats (total geral e por status, sobre TODOS, não filtrado) ----
   const stats = useMemo(() => {
@@ -141,7 +146,7 @@ export function EncontristasView({
     const q = busca.trim().toLowerCase();
     return rows.filter((e) => {
       if (aba !== "todos" && e.sexo !== aba) return false;
-      if (celulaId && e.celula_id !== celulaId) return false;
+      if (celulaId && e.celula !== celulaId) return false;
       if (q && !e.nome.toLowerCase().includes(q)) return false;
       return true;
     });
@@ -181,7 +186,7 @@ export function EncontristasView({
       e.cpf ?? "",
       fmtNasc(e.nascimento),
       e.sexo ?? "",
-      e.celula_id ? nomeCelula.get(e.celula_id) ?? "" : "Sem célula",
+      e.celula ?? "Sem célula",
       STATUS_LABEL[e.status],
       e.chegou ? "Sim" : "Não",
     ]);
@@ -257,9 +262,9 @@ export function EncontristasView({
         className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none focus:border-raso"
       >
         <option value="">Todas as células</option>
-        {celulas.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.nome}
+        {celulasPresentes.map((nome) => (
+          <option key={nome} value={nome}>
+            {nome}
           </option>
         ))}
       </select>
@@ -314,7 +319,7 @@ export function EncontristasView({
         ) : (
           lista.map((e) => {
             const aberto = expandido === e.id;
-            const celula = e.celula_id ? nomeCelula.get(e.celula_id) ?? "—" : "Não tenho célula";
+            const celula = e.celula || "Não tenho célula";
             // edição do campo de data: começa liberado se ainda não há data salva
             const editando_ = editando[e.id] ?? !e.pagar_depois_data;
             const dataVal = dataDrafts[e.id] ?? (e.pagar_depois_data ?? "");
