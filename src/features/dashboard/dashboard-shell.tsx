@@ -31,7 +31,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; pronto: boolean }[] 
   { href: "/servos", label: "Servos", icon: Users, pronto: false },
   { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true },
   { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: false },
-  { href: "/termo", label: "Termo", icon: FileText, pronto: false },
+  { href: "/termos", label: "Termo", icon: FileText, pronto: true },
   { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: false },
   { href: "/onibus", label: "Ônibus", icon: Bus, pronto: false },
   { href: "/agenda", label: "Agenda", icon: Calendar, pronto: false },

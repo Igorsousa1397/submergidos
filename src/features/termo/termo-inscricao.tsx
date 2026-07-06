@@ -353,7 +353,7 @@ export function TermoInscricao({
           ) : fotoFrente ? (
             <div style={{ color: G.ok, fontSize: 13 }}>✓ {fotoFrente.name}</div>
           ) : (
-            <div style={{ color: G.tm, fontSize: 13 }}>📷 Toque para tirar foto ou anexar (PDF/imagem)</div>
+            <div style={{ color: G.tm, fontSize: 13 }}>Toque para tirar foto ou anexar (PDF/imagem)</div>
           )}
         </label>
 
@@ -379,7 +379,7 @@ export function TermoInscricao({
               ) : fotoVerso ? (
                 <div style={{ color: G.ok, fontSize: 13 }}>✓ {fotoVerso.name}</div>
               ) : (
-                <div style={{ color: G.tm, fontSize: 13 }}>📷 Foto do verso</div>
+                <div style={{ color: G.tm, fontSize: 13 }}>Foto do verso</div>
               )}
             </label>
           </>
@@ -414,7 +414,7 @@ export function TermoInscricao({
           {previewRosto ? (
             <img src={previewRosto} alt="selfie" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 10 }} />
           ) : (
-            <div style={{ color: G.tm, fontSize: 13 }}>🤳 Tire uma selfie segurando seu documento</div>
+            <div style={{ color: G.tm, fontSize: 13 }}>Tire uma selfie segurando seu documento</div>
           )}
         </label>
 

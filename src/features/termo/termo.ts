@@ -1,6 +1,50 @@
 import { createClient } from "@/lib/supabase/client";
 import { gerarTermoPDFBlob } from "@/lib/termo-pdf";
 
+// ---- converte a 1ª página de um PDF em imagem (dataURL JPEG) ----
+//  Usado quando o documento é enviado como PDF: o jsPDF não embute PDF,
+//  então rasterizamos a primeira página e tratamos como foto normal.
+async function pdfParaImagemDataURL(file: File): Promise<string | null> {
+  try {
+    const pdfjs = await import("pdfjs-dist");
+    // worker servido de /public (caminho fixo — não depende do bundler)
+    pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjs.getDocument({ data: buf }).promise;
+    const page = await doc.getPage(1);
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // v6 exige o campo `canvas` no render, além do canvasContext
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+    return canvas.toDataURL("image/jpeg", 0.8);
+  } catch (e) {
+    console.error("[pdf→img] falhou:", e);
+    return null;
+  }
+}
+
+// Resolve o documento (frente OU verso): se for PDF, converte em imagem;
+// se for imagem, comprime normal. Devolve { dataUrl, ehPdf } — ehPdf vira
+// false quando a conversão deu certo (o PDF virou foto).
+async function resolverDocumento(
+  file: File,
+): Promise<{ dataUrl: string | null; ehPdf: boolean }> {
+  if (file.type === "application/pdf") {
+    const img = await pdfParaImagemDataURL(file);
+    if (img) return { dataUrl: img, ehPdf: false }; // convertido → tratar como imagem
+    return { dataUrl: null, ehPdf: true }; // falhou → mantém o aviso
+  }
+  const comprimido = await comprimirImagemSeNecessario(file);
+  return { dataUrl: await fileParaDataURL(comprimido), ehPdf: false };
+}
+
 // Converte um File em dataURL (para embutir imagens no PDF).
 function fileParaDataURL(file: File): Promise<string | null> {
   return new Promise((resolve) => {
@@ -188,12 +232,16 @@ export async function assinarTermo(
   let docDataUrl: string | null = null;
   let docVersoDataUrl: string | null = null;
   let selfieDataUrl: string | null = null;
-  const docEhPdf = fotoDoc.type === "application/pdf";
+  let docEhPdf = false;
+  let versoEhPdf = false;
 
   try {
-    const docComprimido = await comprimirImagemSeNecessario(fotoDoc);
-    docPath = await uploadArquivo(encId, docComprimido, "documento_frente", docComprimido.type);
-    docDataUrl = await fileParaDataURL(docComprimido);
+    // sobe o ARQUIVO ORIGINAL no Storage (preserva o PDF, se for PDF)
+    docPath = await uploadArquivo(encId, fotoDoc, "documento_frente", fotoDoc.type);
+    // para o termo: converte PDF→imagem, ou comprime a foto
+    const doc = await resolverDocumento(fotoDoc);
+    docDataUrl = doc.dataUrl;
+    docEhPdf = doc.ehPdf;
   } catch {
     return {
       ok: false,
@@ -203,9 +251,10 @@ export async function assinarTermo(
 
   if (fotoVerso) {
     try {
-      const versoComprimido = await comprimirImagemSeNecessario(fotoVerso);
-      versoPath = await uploadArquivo(encId, versoComprimido, "documento_verso", versoComprimido.type);
-      docVersoDataUrl = await fileParaDataURL(versoComprimido);
+      versoPath = await uploadArquivo(encId, fotoVerso, "documento_verso", fotoVerso.type);
+      const verso = await resolverDocumento(fotoVerso);
+      docVersoDataUrl = verso.dataUrl;
+      versoEhPdf = verso.ehPdf;
     } catch {
       return {
         ok: false,
@@ -250,6 +299,7 @@ export async function assinarTermo(
       termoTexto: signatario.termoTexto,
       docDataUrl,
       docEhPdf,
+      docVersoEhPdf: versoEhPdf,
       docVersoDataUrl,
       selfieDataUrl,
     });

@@ -28,6 +28,7 @@ export type TermoPdfDados = {
   termoTexto: string;
   docDataUrl: string | null; // dataURL da foto do documento (frente)
   docEhPdf: boolean;
+  docVersoEhPdf?: boolean; // true só se o verso-PDF falhou na conversão
   docVersoDataUrl: string | null; // dataURL do verso (opcional)
   selfieDataUrl: string | null;
 };
@@ -186,7 +187,7 @@ export function gerarTermoPDFBlob(termo: TermoPdfDados): Blob {
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(100, 100, 100);
-      pdf.text("Documento anexado em PDF (não renderizado aqui).", margin, yF);
+      pdf.text("Documento enviado em PDF — arquivo original salvo no sistema.", margin, yF);
       return;
     }
     if (!dataUrl) return;
@@ -205,7 +206,7 @@ export function gerarTermoPDFBlob(termo: TermoPdfDados): Blob {
   };
 
   addImg(termo.docDataUrl, "DOCUMENTO DE IDENTIDADE (FRENTE)", termo.docEhPdf);
-  addImg(termo.docVersoDataUrl, "DOCUMENTO DE IDENTIDADE (VERSO)", false);
+  addImg(termo.docVersoDataUrl, "DOCUMENTO DE IDENTIDADE (VERSO)", termo.docVersoEhPdf ?? false);
   addImg(termo.selfieDataUrl, "SELFIE DE VALIDAÇÃO", false);
 
   // Rodapé em todas as páginas
