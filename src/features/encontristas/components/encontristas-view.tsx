@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { atualizarStatus, alternarInscricoes, salvarPagarDepois } from "../actions";
+import { atualizarStatus, alternarInscricoes, salvarPagarDepois, salvarAcordo } from "../actions";
 
 type Status = "pago" | "pendente" | "pagar_depois" | "desistiu";
 type Sexo = "masculino" | "feminino" | null;
@@ -12,7 +12,6 @@ export interface EncRow {
   cpf: string | null;
   nascimento: string | null;
   sexo: Sexo;
-  camiseta: string | null;
   celula: string | null;
   status: Status;
   chegou: boolean;
@@ -112,6 +111,9 @@ export function EncontristasView({
   const [bloqueadas, setBloqueadas] = useState(inscricoesBloqueadas);
   const [dataDrafts, setDataDrafts] = useState<Record<string, string>>({});
   const [editando, setEditando] = useState<Record<string, boolean>>({});
+  const [acordoDrafts, setAcordoDrafts] = useState<Record<string, string>>({});
+  const [editandoAcordo, setEditandoAcordo] = useState<Record<string, boolean>>({});
+  const [mostrarAcordo, setMostrarAcordo] = useState<Record<string, boolean>>({});
   const [pending, startTransition] = useTransition();
 
   // fonte de verdade da UI: estado local, atualizado de forma otimista.
@@ -168,6 +170,14 @@ export function EncontristasView({
     );
     startTransition(async () => {
       await salvarPagarDepois(id, data);
+    });
+  };
+
+  // salva o valor de acordo (null quando vazio → volta ao valor padrão)
+  const salvarAcordoLocal = (id: string, valor: number | null) => {
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, acordo_valor: valor } : r)));
+    startTransition(async () => {
+      await salvarAcordo(id, valor);
     });
   };
 
@@ -323,6 +333,11 @@ export function EncontristasView({
             // edição do campo de data: começa liberado se ainda não há data salva
             const editando_ = editando[e.id] ?? !e.pagar_depois_data;
             const dataVal = dataDrafts[e.id] ?? (e.pagar_depois_data ?? "");
+            const editandoAcordo_ = editandoAcordo[e.id] ?? e.acordo_valor == null;
+            const acordoVal =
+              acordoDrafts[e.id] ?? (e.acordo_valor != null ? String(e.acordo_valor) : "");
+            // abre automático se já houver acordo salvo; senão, só quando clicar no botão
+            const mostrarAcordoAtivo = mostrarAcordo[e.id] ?? e.acordo_valor != null;
             return (
               <div
                 key={e.id}
@@ -357,11 +372,12 @@ export function EncontristasView({
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <Campo label="CPF" valor={e.cpf ?? "—"} />
                       <Campo label="Nascimento" valor={fmtNasc(e.nascimento)} />
-                      <Campo label="Camiseta" valor={e.camiseta ?? "—"} />
                       <Campo label="Emergência" valor={e.emergencia ?? "—"} />
                       <Campo label="Medicamento" valor={e.medicamento ?? "Não"} />
                       <Campo label="Doença crônica" valor={e.doenca_cronica ?? "Não"} />
                     </div>
+
+
 
                     {/* mudar status — some quando pago (a pill + borda verde já bastam) */}
                     {e.status !== "pago" && (
@@ -383,7 +399,85 @@ export function EncontristasView({
                             {STATUS_LABEL[st]}
                           </button>
                         ))}
+                        {/* Acordo: não é status — abre o campo de valor combinado */}
+                        <button
+                          onClick={() =>
+                            setMostrarAcordo((d) => ({ ...d, [e.id]: !mostrarAcordoAtivo }))
+                          }
+                          disabled={pending}
+                          className="rounded-control py-2 text-xs font-semibold transition"
+                          style={
+                            mostrarAcordoAtivo
+                              ? { background: "#2ea77d", color: "#fff" }
+                              : { border: "1px solid rgba(46,167,125,0.5)", color: "#2ea77d" }
+                          }
+                        >
+                          Acordo{e.acordo_valor != null ? ` · R$ ${e.acordo_valor}` : ""}
+                        </button>
                       </div>
+
+                      {/* campo de acordo — só quando o botão Acordo está ativo */}
+                      {mostrarAcordoAtivo && (
+                        <div
+                          className="mt-3 rounded-control border p-3"
+                          style={{
+                            borderColor: "rgba(46,167,125,0.4)",
+                            background: "rgba(46,167,125,0.08)",
+                          }}
+                        >
+                          <p
+                            className="mb-2 text-[11px] uppercase tracking-wide"
+                            style={{ color: "#2ea77d" }}
+                          >
+                            Acordo — valor combinado
+                          </p>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-corrente">
+                                R$
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="0,00"
+                                value={acordoVal}
+                                disabled={!editandoAcordo_}
+                                onChange={(ev) =>
+                                  setAcordoDrafts((d) => ({ ...d, [e.id]: ev.target.value }))
+                                }
+                                className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] py-2 pl-9 pr-3 text-sm text-luz outline-none focus:border-raso disabled:opacity-60"
+                              />
+                            </div>
+                            {editandoAcordo_ ? (
+                              <button
+                                onClick={() => {
+                                  const raw = acordoVal.trim().replace(",", ".");
+                                  const num = raw === "" ? null : Number(raw);
+                                  salvarAcordoLocal(
+                                    e.id,
+                                    num != null && !Number.isNaN(num) ? num : null,
+                                  );
+                                  setEditandoAcordo((d) => ({ ...d, [e.id]: false }));
+                                }}
+                                disabled={pending}
+                                className="rounded-control px-4 py-2 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50"
+                                style={{ background: "#2ea77d" }}
+                              >
+                                Salvar
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setEditandoAcordo((d) => ({ ...d, [e.id]: true }))}
+                                className="rounded-control border px-4 py-2 text-sm font-semibold transition active:scale-[0.98]"
+                                style={{ borderColor: "#2ea77d", color: "#2ea77d" }}
+                              >
+                                Editar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* campo de data — só quando "Pagar depois" está ativo */}
                       {e.status === "pagar_depois" && (

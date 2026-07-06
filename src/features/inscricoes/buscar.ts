@@ -10,6 +10,7 @@ export interface InscricaoEncontrada {
   celula: string | null;
   status: EncontristaStatus;
   termo_assinado_at: string | null;
+  acordo_valor: number | null;
 }
 
 export type BuscaResult =

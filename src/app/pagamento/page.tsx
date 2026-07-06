@@ -17,7 +17,9 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Mesmos valores do Encontro com Deus (conferidos no print: PIX 360 / Cartão 384)
-function valores(igreja: string | null) {
+function valores(igreja: string | null, acordo?: number | null) {
+  // Acordo, quando definido, é o valor combinado final — sobrepõe o padrão (pix e cartão).
+  if (acordo != null) return { pix: acordo, credito: acordo };
   const itajai = igreja === "Fonte Itajaí";
   const pix = itajai ? 200 : 360;
   const credito = itajai ? 210 : 384;
@@ -154,7 +156,7 @@ export default function PagamentoPage() {
   const pagar = async (tipo: "pix" | "credito") => {
     if (!enc || pagando) return;
     setPagando(true);
-    const { pix, credito } = valores(enc.igreja);
+    const { pix, credito } = valores(enc.igreja, enc.acordo_valor);
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/criar-pagamento`, {
         method: "POST",
@@ -183,7 +185,7 @@ export default function PagamentoPage() {
   };
 
   const pago = enc?.status === "pago";
-  const v = enc ? valores(enc.igreja) : null;
+  const v = enc ? valores(enc.igreja, enc.acordo_valor) : null;
 
   // Decisão do "Já se inscreveu?": termo não assinado → assina aqui antes do pagamento.
   // (Quem chega via inscrição→termo já tem termo_assinado_at, então cai direto no pagamento.)

@@ -75,15 +75,21 @@ export async function getDashboard(): Promise<DashboardData> {
       supabase.from("onibus").select("id"),
       supabase.from("profiles").select("role, pago, ativo"),
       supabase.from("roles").select("slug, isento_pagamento"),
-      supabase.from("encontristas").select("created_at, celula"),
+      supabase.from("encontristas").select("created_at, celula, status, acordo_valor"),
     ]);
 
   const checkinFeitos = checkin.count ?? 0;
   const onibusTotal = onibusList.data?.length ?? 0;
 
   // financeiro encontristas
-  const arrecadado = pagos * VALOR_PADRAO;
-  const aReceber = (pendentes + pagarDepois) * VALOR_PADRAO;
+  // Considera acordos: quem tem acordo_valor conta com esse valor no lugar do padrão.
+  let arrecadado = 0;
+  let aReceber = 0;
+  for (const e of encs.data ?? []) {
+    const valor = e.acordo_valor ?? VALOR_PADRAO;
+    if (e.status === "pago") arrecadado += valor;
+    else if (e.status === "pendente" || e.status === "pagar_depois") aReceber += valor;
+  }
   const previsaoTotal = META_ENCONTRISTAS * VALOR_PADRAO;
 
   // ---- servos ----

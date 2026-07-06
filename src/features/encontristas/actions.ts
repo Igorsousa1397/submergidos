@@ -53,3 +53,11 @@ export async function salvarPagarDepois(id: string, data: string) {
     .update({ status: "pagar_depois", pagar_depois_data: data || null })
     .eq("id", id);
 }
+
+export async function salvarAcordo(id: string, valor: number | null) {
+  const supabase = await createClient();
+  await supabase
+    .from("encontristas")
+    .update({ acordo_valor: valor })
+    .eq("id", id);
+}
