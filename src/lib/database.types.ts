@@ -388,18 +388,21 @@ export type Database = {
       onibus: {
         Row: {
           capacidade: number | null
+          genero: Database["public"]["Enums"]["sexo"] | null
           id: string
           identificacao: string
           responsavel_id: string | null
         }
         Insert: {
           capacidade?: number | null
+          genero?: Database["public"]["Enums"]["sexo"] | null
           id?: string
           identificacao: string
           responsavel_id?: string | null
         }
         Update: {
           capacidade?: number | null
+          genero?: Database["public"]["Enums"]["sexo"] | null
           id?: string
           identificacao?: string
           responsavel_id?: string | null
