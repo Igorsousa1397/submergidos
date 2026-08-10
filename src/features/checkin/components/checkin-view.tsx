@@ -76,11 +76,12 @@ export function CheckinView({
     });
   }, [rows, sexo, sub, busca]);
 
-  // ônibus elegíveis para uma pessoa: mesmo sexo + com vaga (ou o já atribuído).
+  // ônibus elegíveis para uma pessoa: tipo igual ao sexo + com vaga (ou o já
+  // atribuído). Ônibus de "servos" não recebe encontrista pelo check-in.
   const onibusPara = (r: CheckinRow) =>
     onibus.filter(
       (o) =>
-        o.genero === r.sexo &&
+        o.tipo === r.sexo &&
         (o.id === r.onibus_id || o.capacidade == null || o.ocupacao < o.capacidade),
     );
 

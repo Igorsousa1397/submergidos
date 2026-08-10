@@ -33,7 +33,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; pronto: boolean }[] 
   { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
   { href: "/termos", label: "Termo", icon: FileText, pronto: true },
   { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: false },
-  { href: "/onibus", label: "Ônibus", icon: Bus, pronto: false },
+  { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
   { href: "/agenda", label: "Agenda", icon: Calendar, pronto: false },
   { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: false },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: false },

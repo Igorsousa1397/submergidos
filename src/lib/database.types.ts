@@ -388,29 +388,57 @@ export type Database = {
       onibus: {
         Row: {
           capacidade: number | null
-          genero: Database["public"]["Enums"]["sexo"] | null
           id: string
           identificacao: string
-          responsavel_id: string | null
+          malas: Database["public"]["Enums"]["onibus_tipo"] | null
+          tipo: Database["public"]["Enums"]["onibus_tipo"] | null
         }
         Insert: {
           capacidade?: number | null
-          genero?: Database["public"]["Enums"]["sexo"] | null
           id?: string
           identificacao: string
-          responsavel_id?: string | null
+          malas?: Database["public"]["Enums"]["onibus_tipo"] | null
+          tipo?: Database["public"]["Enums"]["onibus_tipo"] | null
         }
         Update: {
           capacidade?: number | null
-          genero?: Database["public"]["Enums"]["sexo"] | null
           id?: string
           identificacao?: string
-          responsavel_id?: string | null
+          malas?: Database["public"]["Enums"]["onibus_tipo"] | null
+          tipo?: Database["public"]["Enums"]["onibus_tipo"] | null
+        }
+        Relationships: []
+      }
+      onibus_equipe: {
+        Row: {
+          created_at: string | null
+          onibus_id: string
+          papel: Database["public"]["Enums"]["onibus_papel"]
+          servo_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          onibus_id: string
+          papel: Database["public"]["Enums"]["onibus_papel"]
+          servo_id: string
+        }
+        Update: {
+          created_at?: string | null
+          onibus_id?: string
+          papel?: Database["public"]["Enums"]["onibus_papel"]
+          servo_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "onibus_responsavel_id_fkey"
-            columns: ["responsavel_id"]
+            foreignKeyName: "onibus_equipe_onibus_id_fkey"
+            columns: ["onibus_id"]
+            isOneToOne: false
+            referencedRelation: "onibus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onibus_equipe_servo_id_fkey"
+            columns: ["servo_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -664,6 +692,8 @@ export type Database = {
     Enums: {
       aviso_publico: "todos" | "homens" | "mulheres"
       encontrista_status: "pago" | "pagar_depois" | "desistiu" | "pendente"
+      onibus_papel: "responsavel" | "servo_templo"
+      onibus_tipo: "feminino" | "masculino" | "servos"
       sexo: "masculino" | "feminino"
     }
     CompositeTypes: {
@@ -794,6 +824,8 @@ export const Constants = {
     Enums: {
       aviso_publico: ["todos", "homens", "mulheres"],
       encontrista_status: ["pago", "pagar_depois", "desistiu", "pendente"],
+      onibus_papel: ["responsavel", "servo_templo"],
+      onibus_tipo: ["feminino", "masculino", "servos"],
       sexo: ["masculino", "feminino"],
     },
   },

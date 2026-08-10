@@ -15,7 +15,7 @@ export interface CheckinRow {
 export interface OnibusInfo {
   id: string;
   identificacao: string;
-  genero: "masculino" | "feminino" | null;
+  tipo: "masculino" | "feminino" | "servos" | null;
   capacidade: number | null;
   ocupacao: number; // encontristas já atribuídos a este ônibus
 }
@@ -40,7 +40,7 @@ export async function getCheckinData(): Promise<CheckinData> {
       .order("nome", { ascending: true }),
     supabase
       .from("onibus")
-      .select("id, identificacao, genero, capacidade")
+      .select("id, identificacao, tipo, capacidade")
       .order("identificacao", { ascending: true }),
     // ocupação: todos os encontristas já atribuídos a algum ônibus
     supabase.from("encontristas").select("onibus_id").not("onibus_id", "is", null),
@@ -59,7 +59,7 @@ export async function getCheckinData(): Promise<CheckinData> {
   const onibus: OnibusInfo[] = (onibusRes.data ?? []).map((o) => ({
     id: o.id,
     identificacao: o.identificacao,
-    genero: o.genero,
+    tipo: o.tipo,
     capacidade: o.capacidade,
     ocupacao: ocupacaoPorOnibus.get(o.id) ?? 0,
   }));
