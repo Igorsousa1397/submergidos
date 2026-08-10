@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { atualizarStatus, alternarInscricoes, salvarPagarDepois, salvarAcordo } from "../actions";
+import { atualizarStatus, alternarInscricoes, salvarPagarDepois, salvarAcordo, marcarComoPago, reverterPago } from "../actions";
 
 type Status = "pago" | "pendente" | "pagar_depois" | "desistiu";
 type Sexo = "masculino" | "feminino" | null;
@@ -99,10 +99,12 @@ export function EncontristasView({
   encontristas,
   celulas,
   inscricoesBloqueadas,
+  admin,
 }: {
   encontristas: EncRow[];
   celulas: Celula[];
   inscricoesBloqueadas: boolean;
+  admin: boolean;
 }) {
   const [aba, setAba] = useState<"todos" | "feminino" | "masculino">("todos");
   const [celulaId, setCelulaId] = useState<string>("");
@@ -158,6 +160,35 @@ export function EncontristasView({
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
     startTransition(async () => {
       await atualizarStatus(id, status);
+    });
+  };
+
+  // marca como "pago" — só admin. Atualiza otimista e persiste via action
+  // (que revalida a permissão no servidor). Reverte a UI se o servidor recusar.
+  const marcarPago = (id: string) => {
+    const anterior = rows.find((r) => r.id === id)?.status ?? "pendente";
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: "pago" } : r)));
+    startTransition(async () => {
+      const res = await marcarComoPago(id);
+      if (!res.ok) {
+        setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: anterior } : r)));
+        alert(res.erro ?? "Não foi possível marcar como pago.");
+      }
+    });
+  };
+
+  // reverte um "pago" para "pendente" — só admin. Confirma antes (evita clique
+  // acidental num registro já confirmado). Reverte a UI se o servidor recusar.
+  const reverterPagamento = (id: string) => {
+    if (!confirm("Reverter este pagamento para PENDENTE?")) return;
+    const anterior = rows.find((r) => r.id === id)?.status ?? "pago";
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: "pendente" } : r)));
+    startTransition(async () => {
+      const res = await reverterPago(id);
+      if (!res.ok) {
+        setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: anterior } : r)));
+        alert(res.erro ?? "Não foi possível reverter o pagamento.");
+      }
     });
   };
 
@@ -384,6 +415,17 @@ export function EncontristasView({
                     <div>
                       <p className="mb-2 text-xs uppercase tracking-wide text-corrente">Status</p>
                       <div className="grid grid-cols-1 gap-2">
+                        {/* Marcar como pago — só admin. Fica em destaque no topo. */}
+                        {admin && (
+                          <button
+                            onClick={() => marcarPago(e.id)}
+                            disabled={pending}
+                            className="rounded-control py-2 text-xs font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
+                            style={{ background: STATUS_COR.pago }}
+                          >
+                            Marcar como pago
+                          </button>
+                        )}
                         {STATUS_MANUAL.map((st) => (
                           <button
                             key={st}
@@ -530,6 +572,18 @@ export function EncontristasView({
                         </div>
                       )}
                     </div>
+                    )}
+
+                    {/* reverter pagamento — só admin, e só quando já está pago */}
+                    {admin && e.status === "pago" && (
+                      <button
+                        onClick={() => reverterPagamento(e.id)}
+                        disabled={pending}
+                        className="w-full rounded-control border py-2 text-xs font-semibold transition active:scale-[0.98] disabled:opacity-50"
+                        style={{ borderColor: "rgba(229,86,78,0.5)", color: "#e5564e" }}
+                      >
+                        Reverter para pendente
+                      </button>
                     )}
 
                     {/* entrar em contato (WhatsApp) — só se tiver número */}
