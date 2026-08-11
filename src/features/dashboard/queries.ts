@@ -17,7 +17,7 @@ export const VALOR_PADRAO = 360; // R$ por encontrista
 const VALOR_COZINHA = 100;
 const VALOR_SERVO = 220;
 
-export type DiaCount = { dia: string; qtd: number };
+export type DiaCount = { dia: string; iso: string; qtd: number };
 export type CelulaCount = { nome: string; qtd: number };
 
 export type DashboardData = {
@@ -35,6 +35,7 @@ export type DashboardData = {
   pagarDepois: number;
   desistencias: number;
   meta: number;
+  itajai: number; // encontristas da Fonte Itajaí (pagam R$ 200)
   // financeiro encontristas
   arrecadado: number;
   aReceber: number;
@@ -67,7 +68,7 @@ export async function getDashboard(): Promise<DashboardData> {
   const total = resumo?.total_geral ?? 0;
 
   // ---- contadores de topo + dados brutos p/ agregações ----
-  const [checkin, quartos, ocorrencias, onibusList, servos, roles, encs] =
+  const [checkin, quartos, ocorrencias, onibusList, passageiros, servos, roles, encs] =
     await Promise.all([
       supabase.from("encontristas").select("id", { count: "exact", head: true }).eq("chegou", true),
       supabase.from("quartos").select("id", { count: "exact", head: true }),
@@ -76,25 +77,36 @@ export async function getDashboard(): Promise<DashboardData> {
         .from("ocorrencias")
         .select("id", { count: "exact", head: true })
         .eq("resolvido", false),
-      supabase.from("onibus").select("id"),
+      supabase.from("onibus").select("id, capacidade"),
+      // ônibus como no original: passageiros atribuídos / capacidade total
+      supabase
+        .from("encontristas")
+        .select("id", { count: "exact", head: true })
+        .not("onibus_id", "is", null),
       supabase.from("profiles").select("role, pagamento, ativo"),
       supabase.from("roles").select("slug, isento_pagamento"),
-      supabase.from("encontristas").select("created_at, celula, status, acordo_valor"),
+      supabase.from("encontristas").select("created_at, celula, status, acordo_valor, igreja"),
     ]);
 
   const checkinFeitos = checkin.count ?? 0;
-  const onibusTotal = onibusList.data?.length ?? 0;
+  const onibusTotal = (onibusList.data ?? []).reduce((s, o) => s + (o.capacidade ?? 0), 0);
 
   // financeiro encontristas
   // Considera acordos: quem tem acordo_valor conta com esse valor no lugar do padrão.
+  // Itajaí paga R$ 200 (regra do original).
   let arrecadado = 0;
   let aReceber = 0;
+  let itajai = 0;
   for (const e of encs.data ?? []) {
-    const valor = e.acordo_valor ?? VALOR_PADRAO;
+    const ehItajai = e.igreja === "Fonte Itajaí";
+    if (ehItajai && e.status !== "desistiu") itajai += 1;
+    const valor = e.acordo_valor ?? (ehItajai ? 200 : VALOR_PADRAO);
     if (e.status === "pago") arrecadado += valor;
     else if (e.status === "pendente" || e.status === "pagar_depois") aReceber += valor;
   }
-  const previsaoTotal = META_ENCONTRISTAS * VALOR_PADRAO;
+  // previsão da meta: Itajaí entra com R$ 200 (nota exibida no card)
+  const previsaoTotal =
+    Math.max(0, META_ENCONTRISTAS - itajai) * VALOR_PADRAO + itajai * 200;
 
   // ---- servos ----
   const isentaPorSlug = new Map<string, boolean>(
@@ -131,18 +143,20 @@ export async function getDashboard(): Promise<DashboardData> {
   }
 
   // ---- cadastros por dia (encontristas.created_at) ----
+  // chaveado pelo ISO (permite filtrar 7d/14d/30d e ordenar de verdade)
   const contagemDia = new Map<string, number>();
   for (const e of encs.data ?? []) {
     if (!e.created_at) continue;
-    const dia = new Date(e.created_at).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-    });
-    contagemDia.set(dia, (contagemDia.get(dia) ?? 0) + 1);
+    const iso = e.created_at.slice(0, 10);
+    contagemDia.set(iso, (contagemDia.get(iso) ?? 0) + 1);
   }
   const cadastrosPorDia: DiaCount[] = [...contagemDia.entries()]
-    .map(([dia, qtd]) => ({ dia, qtd }))
-    .sort((a, b) => a.dia.localeCompare(b.dia));
+    .map(([iso, qtd]) => ({
+      iso,
+      dia: `${iso.slice(8, 10)}/${iso.slice(5, 7)}`,
+      qtd,
+    }))
+    .sort((a, b) => a.iso.localeCompare(b.iso));
 
   // ---- por célula ----
   const contagemCel = new Map<string, number>();
@@ -157,7 +171,7 @@ export async function getDashboard(): Promise<DashboardData> {
   return {
     checkinFeitos,
     checkinTotal: total,
-    onibusOcupados: 0,
+    onibusOcupados: passageiros.count ?? 0,
     onibusTotal,
     quartos: quartos.count ?? 0,
     ocorrencias: ocorrencias.count ?? 0,
@@ -167,6 +181,7 @@ export async function getDashboard(): Promise<DashboardData> {
     pagarDepois,
     desistencias,
     meta: META_ENCONTRISTAS,
+    itajai,
     arrecadado,
     aReceber,
     previsaoTotal,

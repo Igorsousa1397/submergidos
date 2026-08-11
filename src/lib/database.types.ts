@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      achados: {
+        Row: {
+          created_at: string | null
+          criado_por: string | null
+          dono: string | null
+          entregue: boolean
+          entregue_at: string | null
+          id: string
+          item: string
+          local: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          criado_por?: string | null
+          dono?: string | null
+          entregue?: boolean
+          entregue_at?: string | null
+          id?: string
+          item: string
+          local?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          criado_por?: string | null
+          dono?: string | null
+          entregue?: boolean
+          entregue_at?: string | null
+          id?: string
+          item?: string
+          local?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achados_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agenda: {
         Row: {
           aviso: string | null

@@ -41,9 +41,9 @@ const NAV: NavItem[] = [
   { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: true },
   { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
   { href: "/agenda", label: "Agenda", icon: Calendar, pronto: true },
-  { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: false },
+  { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: true },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },
-  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },
+  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: true },
   { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: true },
   { href: "/uniformes", label: "Uniformes", icon: Shirt, pronto: true },
   { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: true },
@@ -58,6 +58,7 @@ const NAV_TELAS_EXTRAS: Record<string, NavItem> = {
   onibus: { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
   agenda: { href: "/agenda", label: "Agenda (gestão)", icon: Calendar, pronto: true },
   saude: { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: true },
+  img: { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: true },
 };
 
 // Menu do SERVO (espelha o app original: Perfil, Agenda, Avisos, Uniforme,
@@ -72,7 +73,7 @@ const NAV_SERVO: NavItem[] = [
   { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: true },
   { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
   { href: "/termo-servo", label: "Termo", icon: FileText, pronto: false },
-  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },
+  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: true },
 ];
 
 export function DashboardShell({

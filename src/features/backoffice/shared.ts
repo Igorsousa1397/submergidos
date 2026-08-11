@@ -30,6 +30,8 @@ export const TELAS: { id: string; label: string; href: string }[] = [
   { id: "agenda", label: "Agenda (gestão)", href: "/agenda" },
   // dado sensível: conceder só à equipe de saúde (o RLS também respeita)
   { id: "saude", label: "Saúde", href: "/saude" },
+  // equipe de mídia (quem NÃO autorizou uso de imagem)
+  { id: "img", label: "Uso de Imagem", href: "/uso-imagem" },
 ];
 
 // Mapa padrão função → perfis líderes responsáveis (portado do original).
