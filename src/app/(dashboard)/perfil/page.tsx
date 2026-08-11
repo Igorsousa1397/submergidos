@@ -52,6 +52,8 @@ export default async function PerfilPage({
     searchParams,
   ]);
   if (!p) redirect("/dashboard");
+  // conta admin é de sistema: não serve no encontro nem paga inscrição
+  if (p.roleSlug === "admin") redirect("/dashboard");
 
   const valor = p.roleSlug === "cozinha" ? VALOR_COZINHA : VALOR_SERVO;
   const podePagar =

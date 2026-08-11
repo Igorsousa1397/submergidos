@@ -28,7 +28,8 @@ import {
 import { isAdmin } from "@/lib/permissions";
 
 // `tela` = id no catálogo do Back Office (aba Perfis). Sem `tela`, o item é
-// fixo — todo mundo vê. `soAdmin` restringe a admin/líder geral.
+// fixo — todo mundo vê. `soAdmin` restringe a admin/líder geral; `soServo`
+// esconde de quem é admin (conta de sistema, não participa do encontro).
 type NavItem = {
   href: string;
   label: string;
@@ -36,13 +37,14 @@ type NavItem = {
   pronto: boolean;
   tela?: string;
   soAdmin?: boolean;
+  soServo?: boolean;
 };
 
 // Menu único: o que cada pessoa enxerga sai das telas do PERFIL dela
 // (roles.telas) + telas extras individuais, definidas no Back Office.
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Início", icon: Home, pronto: true },
-  { href: "/perfil", label: "Perfil", icon: User, pronto: true },
+  { href: "/perfil", label: "Perfil", icon: User, pronto: true, soServo: true },
   { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
   { href: "/servos", label: "Servos", icon: Users, pronto: true, tela: "servos" },
   { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true, tela: "enc" },
@@ -76,6 +78,8 @@ export function DashboardShell({
   const admin = isAdmin(role);
   const itens = NAV.filter((item) => {
     if (item.soAdmin) return admin;
+    // conta admin não é participante: sem perfil de servo
+    if (item.soServo && role === "admin") return false;
     if (!item.tela) return true; // tela fixa: todos veem
     return admin || telasLiberadas.includes(item.tela);
   });
