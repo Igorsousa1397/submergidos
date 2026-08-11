@@ -73,7 +73,7 @@ export async function getDashboard(): Promise<DashboardData> {
       supabase.from("quartos").select("id", { count: "exact", head: true }),
       supabase.from("ocorrencias").select("id", { count: "exact", head: true }),
       supabase.from("onibus").select("id"),
-      supabase.from("profiles").select("role, pago, ativo"),
+      supabase.from("profiles").select("role, pagamento, ativo"),
       supabase.from("roles").select("slug, isento_pagamento"),
       supabase.from("encontristas").select("created_at, celula, status, acordo_valor"),
     ]);
@@ -109,16 +109,18 @@ export async function getDashboard(): Promise<DashboardData> {
   let servosAReceber = 0;
 
   for (const s of servosAtivos) {
-    const isento = isentaPorSlug.get(s.role) ?? false;
+    // abonado por perfil (isento) OU abonado manualmente — fora do financeiro
+    const isento = (isentaPorSlug.get(s.role) ?? false) || s.pagamento === "abonado";
     if (isento) {
       servosAbonados += 1;
-      continue; // abonados não contam no financeiro
+      continue;
     }
     const valor = s.role === "cozinha" ? VALOR_COZINHA : VALOR_SERVO;
-    if (s.pago) {
+    if (s.pagamento === "pago") {
       servosPagos += 1;
       servosArrecadado += valor;
     } else {
+      // pendente e pagar_depois contam como "a receber"
       servosPendentes += 1;
       servosAReceber += valor;
     }

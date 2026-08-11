@@ -1,7 +1,8 @@
 import { getEncontristas, getCelulas } from "@/features/encontristas/queries";
 import { inscricoesBloqueadas } from "@/features/inscricoes/config";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/permissions";
+import { isAdmin, isGestao } from "@/lib/permissions";
 import {
   EncontristasView,
   type EncRow,
@@ -24,7 +25,9 @@ export default async function EncontristasPage() {
       ),
   ]);
 
-  const admin = isAdmin(perfilRes?.data?.role ?? "");
+  const role = perfilRes?.data?.role ?? "servo";
+  if (!isGestao(role)) redirect("/dashboard");
+  const admin = isAdmin(role);
 
   return (
     <EncontristasView

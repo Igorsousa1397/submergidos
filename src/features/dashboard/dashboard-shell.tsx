@@ -9,6 +9,7 @@ import {
   X,
   Home,
   Users,
+  User,
   UserCheck,
   CheckSquare,
   FileText,
@@ -21,14 +22,19 @@ import {
   Stethoscope,
   Shirt,
   FolderKanban,
+  Megaphone,
+  Mail,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
+import { isGestao } from "@/lib/permissions";
 
-// Itens do menu. `pronto: false` → ainda não portado (vai pra /em-breve).
-const NAV: { href: string; label: string; icon: LucideIcon; pronto: boolean }[] = [
+type NavItem = { href: string; label: string; icon: LucideIcon; pronto: boolean };
+
+// Menu de GESTÃO (admin, líder geral, pastor). `pronto: false` → /em-breve.
+const NAV: NavItem[] = [
   { href: "/dashboard", label: "Início", icon: Home, pronto: true },
-  { href: "/servos", label: "Servos", icon: Users, pronto: false },
+  { href: "/servos", label: "Servos", icon: Users, pronto: true },
   { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true },
   { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
   { href: "/termos", label: "Termo", icon: FileText, pronto: true },
@@ -41,6 +47,22 @@ const NAV: { href: string; label: string; icon: LucideIcon; pronto: boolean }[] 
   { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },
   { href: "/uniformes", label: "Uniformes", icon: Shirt, pronto: false },
   { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: false },
+];
+
+// Menu do SERVO (espelha o app original: Perfil, Agenda, Avisos, Uniforme,
+// Ocorrências, Saúde, Quartos, Check-in, Termo, Achados & Perdidos, Cartas).
+const NAV_SERVO: NavItem[] = [
+  { href: "/dashboard", label: "Agenda", icon: Calendar, pronto: true },
+  { href: "/perfil", label: "Perfil", icon: User, pronto: false },
+  { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: false },
+  { href: "/uniformes", label: "Uniforme", icon: Shirt, pronto: false },
+  { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: false },
+  { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },
+  { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: false },
+  { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
+  { href: "/termo-servo", label: "Termo", icon: FileText, pronto: false },
+  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },
+  { href: "/cartas", label: "Cartas", icon: Mail, pronto: false },
 ];
 
 export function DashboardShell({
@@ -56,6 +78,7 @@ export function DashboardShell({
 }) {
   const [aberto, setAberto] = useState(false);
   const pathname = usePathname();
+  const itens = isGestao(role) ? NAV : NAV_SERVO;
 
   return (
     <div data-zone="deep" className="min-h-screen">
@@ -125,7 +148,7 @@ export function DashboardShell({
           className="flex flex-col gap-0.5 overflow-y-auto px-2 py-3"
           style={{ maxHeight: "calc(100vh - 140px)" }}
         >
-          {NAV.map((item) => {
+          {itens.map((item) => {
             const Icone = item.icon;
             const alvo = item.pronto
               ? item.href

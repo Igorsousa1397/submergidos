@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getDashboard } from "@/features/dashboard/queries";
+import { getServoHome } from "@/features/servo-home/queries";
+import { ServoHome } from "@/features/servo-home/components/servo-home";
+import { isGestao } from "@/lib/permissions";
 
 const brl = (v: number) =>
   `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -15,6 +18,15 @@ export default async function DashboardPage() {
     .select("nome, role")
     .eq("id", user!.id)
     .single();
+
+  const primeiroNomeServo = perfil?.nome?.split(" ")[0] ?? "servo";
+
+  // Servos (e demais perfis fora da gestão) veem a home própria,
+  // não o painel administrativo — regra do app original.
+  if (!isGestao(perfil?.role ?? "servo")) {
+    const dados = await getServoHome(user!.id);
+    return <ServoHome nome={primeiroNomeServo} dados={dados} />;
+  }
 
   const d = await getDashboard();
   const primeiroNome = perfil?.nome?.split(" ")[0] ?? "servo";

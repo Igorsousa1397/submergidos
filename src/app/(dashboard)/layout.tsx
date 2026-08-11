@@ -17,9 +17,14 @@ export default async function DashboardLayout({
 
   const { data: perfil } = await supabase
     .from("profiles")
-    .select("nome, role")
+    .select("nome, role, primeiro, aprovado")
     .eq("id", user.id)
     .single();
+
+  // auto-cadastro ainda não aprovado pelo admin: fica na sala de espera
+  if (perfil && !perfil.aprovado) redirect("/aguardando-aprovacao");
+  // servo criado pelo admin com senha temporária: força a troca antes de entrar
+  if (perfil?.primeiro) redirect("/primeiro-acesso");
 
   const nome = perfil?.nome?.split(" ")[0] ?? "servo";
   const role = perfil?.role ?? "servo";

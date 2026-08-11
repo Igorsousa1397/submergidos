@@ -1,14 +1,14 @@
-import { getOnibusData } from "@/features/onibus/queries";
-import { OnibusView } from "@/features/onibus/components/onibus-view";
+import { getServosData } from "@/features/servos/queries";
+import { ServosView } from "@/features/servos/components/servos-view";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin, isGestao } from "@/lib/permissions";
 
 // Server Component: busca no servidor (RLS aplicado), passa pro view client.
-export default async function OnibusPage() {
+export default async function ServosPage() {
   const supabase = await createClient();
-  const [{ onibus, servos }, perfilRes] = await Promise.all([
-    getOnibusData(),
+  const [{ servos, roles, dataLimitePagamento }, perfilRes] = await Promise.all([
+    getServosData(),
     supabase.auth
       .getUser()
       .then(({ data: { user } }) =>
@@ -22,5 +22,12 @@ export default async function OnibusPage() {
   if (!isGestao(role)) redirect("/dashboard");
   const admin = isAdmin(role);
 
-  return <OnibusView onibus={onibus} servos={servos} admin={admin} />;
+  return (
+    <ServosView
+      servos={servos}
+      roles={roles}
+      dataLimitePagamento={dataLimitePagamento}
+      admin={admin}
+    />
+  );
 }

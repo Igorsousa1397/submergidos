@@ -62,6 +62,12 @@ export default async function LoginPage({
 
         {/* links de apoio */}
         <div className="mt-6 flex flex-col items-center gap-2 text-center">
+          <Link
+            href="/cadastro-servo"
+            className="text-sm font-semibold text-raso underline-offset-4 transition hover:text-luz hover:underline"
+          >
+            Quero servir — fazer meu cadastro
+          </Link>
           <a
             href={WHATSAPP_SENHA}
             target="_blank"

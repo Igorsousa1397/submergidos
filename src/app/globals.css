@@ -126,8 +126,21 @@ body {
 }
 .flutuar { animation: flutuar 3.2s ease-in-out infinite; }
 
+/* bottom sheet: painel sobe de baixo; overlay esmaece */
+@keyframes sheet-sobe {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes surgir {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.sheet-sobe   { animation: sheet-sobe .3s cubic-bezier(.22,.9,.35,1); }
+.sheet-overlay { animation: surgir .25s ease; }
+
 @media (prefers-reduced-motion: reduce) {
-  .bolha, .bolha-loader, .agua-sobe, .pop-check, .flutuar {
+  .bolha, .bolha-loader, .agua-sobe, .pop-check, .flutuar,
+  .sheet-sobe, .sheet-overlay {
     animation: none !important;
   }
   .bolha, .agua-sobe { opacity: 0 !important; }

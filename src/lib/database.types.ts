@@ -448,39 +448,54 @@ export type Database = {
       profiles: {
         Row: {
           ativo: boolean
+          aprovado: boolean
           cpf: string | null
           created_at: string | null
           email: string | null
           id: string
           nascimento: string | null
           nome: string
+          pagamento: Database["public"]["Enums"]["servo_pagamento"]
+          pagar_depois_data: string | null
+          pagar_depois_obs: string | null
           pago: boolean
+          pago_em: string | null
           primeiro: boolean
           role: string
           sexo: Database["public"]["Enums"]["sexo"] | null
         }
         Insert: {
           ativo?: boolean
+          aprovado?: boolean
           cpf?: string | null
           created_at?: string | null
           email?: string | null
           id: string
           nascimento?: string | null
           nome: string
+          pagamento?: Database["public"]["Enums"]["servo_pagamento"]
+          pagar_depois_data?: string | null
+          pagar_depois_obs?: string | null
           pago?: boolean
+          pago_em?: string | null
           primeiro?: boolean
           role?: string
           sexo?: Database["public"]["Enums"]["sexo"] | null
         }
         Update: {
           ativo?: boolean
+          aprovado?: boolean
           cpf?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
           nascimento?: string | null
           nome?: string
+          pagamento?: Database["public"]["Enums"]["servo_pagamento"]
+          pagar_depois_data?: string | null
+          pagar_depois_obs?: string | null
           pago?: boolean
+          pago_em?: string | null
           primeiro?: boolean
           role?: string
           sexo?: Database["public"]["Enums"]["sexo"] | null
@@ -694,6 +709,7 @@ export type Database = {
       encontrista_status: "pago" | "pagar_depois" | "desistiu" | "pendente"
       onibus_papel: "responsavel" | "servo_templo"
       onibus_tipo: "feminino" | "masculino" | "servos"
+      servo_pagamento: "pendente" | "pago" | "abonado" | "pagar_depois"
       sexo: "masculino" | "feminino"
     }
     CompositeTypes: {
@@ -826,6 +842,7 @@ export const Constants = {
       encontrista_status: ["pago", "pagar_depois", "desistiu", "pendente"],
       onibus_papel: ["responsavel", "servo_templo"],
       onibus_tipo: ["feminino", "masculino", "servos"],
+      servo_pagamento: ["pendente", "pago", "abonado", "pagar_depois"],
       sexo: ["masculino", "feminino"],
     },
   },

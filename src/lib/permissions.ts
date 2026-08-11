@@ -21,6 +21,11 @@ export const PODE_ENVIAR_AVISOS: RoleSlug[] = [
 export const isAdmin = (role: string): boolean =>
   role === "admin" || role === "lider_geral";
 
+// Quem usa o shell/telas de GESTÃO (regra do original: os demais perfis
+// caem no shell de servo, com home e menu próprios).
+export const isGestao = (role: string): boolean =>
+  role === "admin" || role === "lider_geral" || role === "pastor";
+
 export const isIsento = (role: string): boolean =>
   ISENTOS_PAGAMENTO.includes(role as RoleSlug);
 
