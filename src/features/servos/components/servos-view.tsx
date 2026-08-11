@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Plus, X, Copy, Check, Search } from "lucide-react";
 import { BottomSheet } from "@/components/bottom-sheet";
+import { InputData } from "@/components/input-data";
 import {
   alternarAtivo,
   abonarServo,
@@ -347,11 +348,9 @@ export function ServosView({
           />
           <div>
             <p className="mb-1 text-[11px] uppercase tracking-wide text-corrente">Nascimento *</p>
-            <input
-              type="date"
+            <InputData
               value={form.nascimento}
-              onChange={(e) => setForm((v) => ({ ...v, nascimento: e.target.value }))}
-              style={{ colorScheme: "dark" }}
+              onChange={(iso) => setForm((v) => ({ ...v, nascimento: iso }))}
               className={inputCls}
             />
           </div>

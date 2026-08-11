@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Bolhas } from "@/components/bolhas";
+import { InputData } from "@/components/input-data";
 import { cadastrarServoPublico } from "./actions";
 
 type Sexo = "masculino" | "feminino";
@@ -117,11 +118,9 @@ export default function CadastroServoPage() {
                   <p className="mb-1 text-[11px] uppercase tracking-wide text-corrente">
                     Data de nascimento
                   </p>
-                  <input
-                    type="date"
+                  <InputData
                     value={f.nascimento}
-                    onChange={(e) => setF((v) => ({ ...v, nascimento: e.target.value }))}
-                    style={{ colorScheme: "dark" }}
+                    onChange={(iso) => setF((v) => ({ ...v, nascimento: iso }))}
                     className={inputCls}
                   />
                 </div>

@@ -1,10 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/permissions";
-import type { Database } from "@/lib/database.types";
 
 // Perfis que podem ser escolhidos AO CRIAR um servo (regra do original:
 // perfis de líder só são atribuídos depois, no Back Office).
@@ -153,30 +151,33 @@ export async function recusarServo(id: string) {
   const erroAdmin = await exigirAdmin(supabase);
   if (erroAdmin) return { ok: false, erro: erroAdmin };
 
-  // trava de segurança: só remove quem ainda NÃO foi aprovado
-  const { data: alvo } = await supabase
-    .from("profiles")
-    .select("aprovado")
-    .eq("id", id)
-    .single();
-  if (!alvo) return { ok: false, erro: "Cadastro não encontrado." };
-  if (alvo.aprovado)
-    return { ok: false, erro: "Este servo já foi aprovado — desative-o em vez de remover." };
+  // deletar usuário é operação administrativa do Auth: roda na Edge Function
+  // `remover-servo` (que tem a service_role e revalida admin + não-aprovado).
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon || !session)
+    return { ok: false, erro: "Sessão expirada. Entre novamente." };
 
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey)
-    return { ok: false, erro: "SUPABASE_SERVICE_ROLE_KEY não configurada no servidor." };
-
-  const admin = createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
-
-  const { error } = await admin.auth.admin.deleteUser(id);
-  if (error) return { ok: false, erro: error.message };
-  revalidar();
-  return { ok: true };
+  try {
+    const res = await fetch(`${url}/functions/v1/remover-servo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anon,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ servoId: id }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, erro: data.erro ?? "Não foi possível remover." };
+    revalidar();
+    return { ok: true };
+  } catch {
+    return { ok: false, erro: "Não foi possível remover. Tente novamente." };
+  }
 }
 
 // ============ Criar servo (conta de login + profile) ============
@@ -195,76 +196,59 @@ export interface NovoServoInput {
   role: string;
 }
 
-const ALFABETO_SENHA = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
-
-function gerarSenhaTemporaria(tamanho = 10) {
-  const bytes = new Uint32Array(tamanho);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => ALFABETO_SENHA[b % ALFABETO_SENHA.length]).join("");
-}
-
 export async function criarServo(input: NovoServoInput) {
   const supabase = await createClient();
   const erroAdmin = await exigirAdmin(supabase);
   if (erroAdmin) return { ok: false as const, erro: erroAdmin };
 
   const nome = input.nome.trim();
-  const email = input.email.trim().toLowerCase();
   const cpf = (input.cpf || "").replace(/\D/g, "");
 
   if (!nome) return { ok: false as const, erro: "Informe o nome completo." };
-  if (!email.includes("@")) return { ok: false as const, erro: "E-mail inválido." };
-  if (cpf.length !== 11) return { ok: false as const, erro: "CPF inválido — precisa ter 11 dígitos." };
+  if (!input.email.includes("@")) return { ok: false as const, erro: "E-mail inválido." };
+  if (cpf.length !== 11)
+    return { ok: false as const, erro: "CPF inválido — precisa ter 11 dígitos." };
   if (!input.nascimento) return { ok: false as const, erro: "Informe a data de nascimento." };
   if (input.sexo !== "masculino" && input.sexo !== "feminino")
     return { ok: false as const, erro: "Selecione o sexo." };
   if (!ROLES_CADASTRO.includes(input.role))
     return { ok: false as const, erro: "Perfil inválido para cadastro." };
 
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey)
-    return {
-      ok: false as const,
-      erro: "SUPABASE_SERVICE_ROLE_KEY não configurada no servidor.",
-    };
+  // A conta é criada na Edge Function `cadastrar-servo` (roda no Supabase,
+  // que já tem a service_role) — o app não precisa da chave configurada.
+  // O JWT do admin vai junto: é ele que libera role escolhido + aprovado.
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon || !session)
+    return { ok: false as const, erro: "Sessão expirada. Entre novamente." };
 
-  // client administrativo (server-only; a service key NUNCA vai pro browser)
-  const admin = createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceKey,
-    { auth: { autoRefreshToken: false, persistSession: false } },
-  );
+  try {
+    const res = await fetch(`${url}/functions/v1/cadastrar-servo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anon,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        nome,
+        email: input.email,
+        cpf,
+        nascimento: input.nascimento,
+        sexo: input.sexo,
+        role: input.role,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.senhaTemporaria)
+      return { ok: false as const, erro: data.erro ?? "Não foi possível criar o servo." };
 
-  const senha = gerarSenhaTemporaria();
-  const { data: criado, error: erroAuth } = await admin.auth.admin.createUser({
-    email,
-    password: senha,
-    email_confirm: true,
-    user_metadata: { nome },
-  });
-
-  if (erroAuth) {
-    const msg = erroAuth.message.includes("already")
-      ? "Já existe uma conta com este e-mail."
-      : erroAuth.message;
-    return { ok: false as const, erro: msg };
+    revalidar();
+    return { ok: true as const, senhaTemporaria: data.senhaTemporaria as string };
+  } catch {
+    return { ok: false as const, erro: "Não foi possível criar o servo. Tente novamente." };
   }
-
-  // o trigger criou o profile (nome/email); completa os demais campos.
-  // Criado pelo admin já nasce aprovado (só o auto-cadastro espera aprovação).
-  const { error: erroPerfil } = await admin
-    .from("profiles")
-    .update({
-      cpf,
-      nascimento: input.nascimento,
-      sexo: input.sexo,
-      role: input.role,
-      aprovado: true,
-    })
-    .eq("id", criado.user.id);
-
-  if (erroPerfil) return { ok: false as const, erro: erroPerfil.message };
-
-  revalidar();
-  return { ok: true as const, senhaTemporaria: senha };
 }
