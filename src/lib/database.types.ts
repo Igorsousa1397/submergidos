@@ -674,6 +674,44 @@ export type Database = {
         }
         Relationships: []
       }
+      saude_registros: {
+        Row: {
+          condicao: string
+          created_at: string | null
+          criado_por: string | null
+          id: string
+          nome: string
+          obs: string | null
+          quarto: string | null
+        }
+        Insert: {
+          condicao: string
+          created_at?: string | null
+          criado_por?: string | null
+          id?: string
+          nome: string
+          obs?: string | null
+          quarto?: string | null
+        }
+        Update: {
+          condicao?: string
+          created_at?: string | null
+          criado_por?: string | null
+          id?: string
+          nome?: string
+          obs?: string | null
+          quarto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saude_registros_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       uniformes: {
         Row: {
           atualizado_em: string | null

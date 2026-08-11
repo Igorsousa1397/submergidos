@@ -44,7 +44,7 @@ const NAV: NavItem[] = [
   { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: false },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },
   { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },
-  { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },
+  { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: true },
   { href: "/uniformes", label: "Uniformes", icon: Shirt, pronto: true },
   { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: true },
 ];
@@ -57,6 +57,7 @@ const NAV_TELAS_EXTRAS: Record<string, NavItem> = {
   termo: { href: "/termos", label: "Termo (gestão)", icon: FileText, pronto: true },
   onibus: { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
   agenda: { href: "/agenda", label: "Agenda (gestão)", icon: Calendar, pronto: true },
+  saude: { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: true },
 };
 
 // Menu do SERVO (espelha o app original: Perfil, Agenda, Avisos, Uniforme,
@@ -67,7 +68,7 @@ const NAV_SERVO: NavItem[] = [
   { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
   { href: "/uniformes", label: "Uniforme", icon: Shirt, pronto: true },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },
-  { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },
+  // Saúde saiu do menu fixo do servo: dado sensível — entra via Back Office
   { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: true },
   { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
   { href: "/termo-servo", label: "Termo", icon: FileText, pronto: false },

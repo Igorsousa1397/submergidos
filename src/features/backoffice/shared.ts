@@ -28,6 +28,8 @@ export const TELAS: { id: string; label: string; href: string }[] = [
   { id: "termo", label: "Termo", href: "/termos" },
   { id: "onibus", label: "Ônibus", href: "/onibus" },
   { id: "agenda", label: "Agenda (gestão)", href: "/agenda" },
+  // dado sensível: conceder só à equipe de saúde (o RLS também respeita)
+  { id: "saude", label: "Saúde", href: "/saude" },
 ];
 
 // Mapa padrão função → perfis líderes responsáveis (portado do original).
