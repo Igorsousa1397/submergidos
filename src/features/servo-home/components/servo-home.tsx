@@ -17,93 +17,6 @@ const cardCls = "rounded-card border border-[rgba(164,214,232,0.12)] bg-[rgba(0,
 // cores das barras laterais da agenda (cíclicas, como no original)
 const CORES_AGENDA = ["#0a84ff", "#ff9f0a", "#bf5af2", "#12b5a6", "#ff2d92", "#64b5f6"];
 
-// Ministrações — conteúdo portado do app original (estático por enquanto).
-const MINISTRACOES: { titulo: string; dia: string; resumo: string; ato: string | null }[] = [
-  {
-    titulo: "Pré-Encontro",
-    dia: "Quinta · 20:00",
-    resumo:
-      "Momento de organização dos itens que vão para o sítio do encontro. Algumas escalas serão definidas pelo líder geral.",
-    ato: null,
-  },
-  {
-    titulo: "Envio",
-    dia: "Quinta · 23:30",
-    resumo: "Oração com todos os servos antes da partida. É muito importante que nenhum servo falte",
-    ato: null,
-  },
-  {
-    titulo: "Encontro com o Mundo, Encontro com Deus",
-    dia: "Sexta · 23:00",
-    resumo: "Em breve...",
-    ato:
-      'Apelo para que os encontristas aceitem a Jesus. Os servos fazem a oração de confissão junto aos encontristas: "Senhor Jesus, eu reconheço que sou um pecador e preciso do Teu perdão. Eu creio que Tu morreste na cruz por mim e ressuscitaste para me dar a vida eterna. Hoje, eu Te aceito como meu único e suficiente Senhor e Salvador da minha vida. Entra no meu coração, guia os meus passos e transforma-me na pessoa que desejas que eu seja. Entrego a minha vida a Ti. Em nome de Jesus. Amém."',
-  },
-  {
-    titulo: "Ministração Peniel",
-    dia: "Sábado · 08:30",
-    resumo: "Em breve...",
-    ato:
-      "Os encontristas vão ao microfone e dizem o nome do pecado que rotulava a sua identidade quando chegaram. Os servos, ao abraçar e orar, anulam esses rótulos do pecado e declaram um novo nome: Israel, príncipe ou princesa de Deus. Quando eles saírem para fora, para receber a lembrancinha, os servos formam um corredor para comemorar o retorno deles ao templo com a identidade nova após o ato, celebrando a mudança deles.",
-  },
-  {
-    titulo: "Ministração Cura",
-    dia: "Sábado · 10:30",
-    resumo: "Em breve...",
-    ato:
-      "Semelhante ao ato da Ministração Peniel. O encontrista vai ao microfone para liberar perdão por algo que fez e pedir perdão também. Ao finalizar, os servos abraçam e oram declarando que as correntes que o aprisionavam nessa mágoa foram quebradas e que ele está livre.",
-  },
-  {
-    titulo: "Ministração Escamas",
-    dia: "Sábado · 15:30",
-    resumo: "Em breve...",
-    ato:
-      "Uma venda é colocada nos olhos dos encontristas simbolizando escamas que deixam a pessoa cega no mundo espiritual. Após o pastor iniciar a ministração, os servos retiram as vendas e oram pelos encontristas como ato profético de que as escamas foram retiradas e que agora eles enxergam com os olhos espirituais.",
-  },
-  {
-    titulo: "Ministração Libertação",
-    dia: "Sábado · 17:00",
-    resumo: "Em breve...",
-    ato:
-      "⚠️ Pontos de atenção:\n1. Servos oram pelos encontristas e staffs dão apoio atrás para evitar quedas.\n2. Oração de libertação é feita com a mão na cabeça do encontrista.\n3. Demônios são expulsos em nome de Jesus — se manifestar, dê uma ordem a todas as entidades e expulse em nome de Jesus.\n4. Não pergunte o nome frequentemente — só após a oração para confirmar que não há mais entidades.\n5. Não abrace o encontrista nesse momento — pode ser perigoso.\n6. Não é permitido ir ao banheiro — se necessário, procure os pastores.\n\nApós todas as renúncias, nos revestimos de toda armadura do Céu e celebramos juntos a libertação.",
-  },
-  {
-    titulo: "Ministração Amor de Deus",
-    dia: "Sábado · 21:30",
-    resumo: "Em breve...",
-    ato:
-      "1. Ao finalizar a ministração, todos os servos oram por todos os encontristas declarando o amor de Deus sobre suas vidas.\n2. Todos vão para a fogueira para ver os pecados serem queimados na cruz.",
-  },
-  {
-    titulo: "Ministração Sonhos",
-    dia: "Domingo · 08:30",
-    resumo: "Em breve...",
-    ato:
-      "Todos fazem uma caixa imaginária do tamanho dos seus sonhos. De forma profética os sonhos são colocados dentro dessa caixa e enviados ao céu lançando a caixa para cima. Em seguida é distribuída uma uva para cada pessoa — colocamos profeticamente os sonhos de Deus dentro da uva e a ingerimos para que os sonhos de Deus sejam gerados em nós.",
-  },
-  {
-    titulo: "Unção de Multiplicação",
-    dia: "Domingo · 09:30",
-    resumo: "Em breve...",
-    ato:
-      "É feita uma oração sobre todos os encontristas declarando unção de multiplicação sobre eles, para que possam multiplicar em todas as áreas da vida.",
-  },
-  {
-    titulo: "Batismo com Espírito Santo",
-    dia: "Domingo · 10:30",
-    resumo: "Em breve...",
-    ato:
-      'Oram com imposição de mãos, declarando o batismo com o Espírito Santo, batismo com fogo e ativação de dons. Se a pessoa aparentemente demonstrar não estar recebendo o batismo, conduzir ela a fazer uma oração de confissão, semelhante a: "Espírito Santo, eu o reconheço como pessoa e confesso precisar de ti, te convido a habitar em mim e ativar todos os dons necessários para que eu cumpra o propósito de Deus na minha história".',
-  },
-  {
-    titulo: "Oração Estilo de Vida",
-    dia: "Domingo · 15:00",
-    resumo: "Em breve...",
-    ato:
-      "São entregues os presentes e cartas enviadas pela família do encontrista. Um dos atos mais importantes do encontro — muita atenção ao colocar a sacola à frente do encontrista.",
-  },
-];
-
 export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData }) {
   const [aba, setAba] = useState<Aba>("agenda");
 
@@ -218,13 +131,11 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
         </div>
       )}
 
-      {/* MINISTRAÇÕES */}
+      {/* MINISTRAÇÕES — conteúdo do Submergidos ainda não definido */}
       {aba === "ministracoes" && (
-        <div className="space-y-2">
-          {MINISTRACOES.map((m) => (
-            <MinistracaoCard key={m.titulo} m={m} />
-          ))}
-        </div>
+        <p className="py-8 text-center text-sm text-corrente">
+          As ministrações ainda não foram publicadas.
+        </p>
       )}
     </div>
   );
@@ -406,45 +317,5 @@ function BannerCard({ b }: { b: import("../queries").BannerPendencia }) {
       </p>
       <p className="mt-0.5 text-xs text-corrente">{cfg.texto}</p>
     </Link>
-  );
-}
-
-function MinistracaoCard({
-  m,
-}: {
-  m: { titulo: string; dia: string; resumo: string; ato: string | null };
-}) {
-  const [aberto, setAberto] = useState(false);
-  return (
-    <div className={cardCls}>
-      <button
-        onClick={() => setAberto((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 p-4 text-left"
-      >
-        <div className="min-w-0">
-          <p className="font-semibold text-luz">{m.titulo}</p>
-          <p className="text-xs text-corrente">{m.dia}</p>
-        </div>
-        {aberto ? (
-          <ChevronUp size={16} className="shrink-0 text-corrente" />
-        ) : (
-          <ChevronDown size={16} className="shrink-0 text-corrente" />
-        )}
-      </button>
-      {aberto && (
-        <div className="space-y-3 border-t border-[rgba(164,214,232,0.1)] px-4 py-3 text-sm">
-          <div>
-            <p className="mb-1 text-[11px] uppercase tracking-wide text-corrente">Resumo</p>
-            <p className="leading-relaxed text-luz">{m.resumo}</p>
-          </div>
-          {m.ato && (
-            <div>
-              <p className="mb-1 text-[11px] uppercase tracking-wide text-corrente">Ato</p>
-              <p className="whitespace-pre-line leading-relaxed text-luz">{m.ato}</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
   );
 }
