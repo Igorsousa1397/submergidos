@@ -610,7 +610,7 @@ function CardQuarto({
                 onChange={setBuscaServo}
                 sugestoes={sugestoesServo}
                 onPick={(p) => addServo(q, p)}
-                vazio="Nenhum servo disponível"
+                vazio='Ninguém disponível (só servos com função "Servo de Quarto" na escala)'
               />
             )}
           </div>

@@ -36,28 +36,35 @@ export interface QuartosData {
 export async function getQuartosData(): Promise<QuartosData> {
   const supabase = await createClient();
 
-  const [quartosRes, qServosRes, qEncRes, servosRes, encRes] = await Promise.all([
-    supabase
-      .from("quartos")
-      .select("id, numero, genero, is_maes, limite_encontristas, limite_servos")
-      .order("numero", { ascending: true }),
-    supabase.from("quarto_servos").select("quarto_id, servo_id, profiles(nome)"),
-    supabase
-      .from("quarto_encontristas")
-      .select("quarto_id, encontrista_id, encontristas(nome, camiseta)"),
-    supabase
-      .from("profiles")
-      .select("id, nome, sexo")
-      .neq("role", "admin")
-      .eq("ativo", true)
-      .order("nome", { ascending: true }),
-    // regra do original: só entra no quarto quem já fez CHECK-IN
-    supabase
-      .from("encontristas")
-      .select("id, nome, sexo")
-      .eq("chegou", true)
-      .order("nome", { ascending: true }),
-  ]);
+  const [quartosRes, qServosRes, qEncRes, servosRes, encRes, escalaQuartoRes] =
+    await Promise.all([
+      supabase
+        .from("quartos")
+        .select("id, numero, genero, is_maes, limite_encontristas, limite_servos")
+        .order("numero", { ascending: true }),
+      supabase.from("quarto_servos").select("quarto_id, servo_id, profiles(nome)"),
+      supabase
+        .from("quarto_encontristas")
+        .select("quarto_id, encontrista_id, encontristas(nome, camiseta)"),
+      supabase
+        .from("profiles")
+        .select("id, nome, sexo")
+        .neq("role", "admin")
+        .eq("ativo", true)
+        .order("nome", { ascending: true }),
+      // regra do original: só entra no quarto quem já fez CHECK-IN
+      supabase
+        .from("encontristas")
+        .select("id, nome, sexo")
+        .eq("chegou", true)
+        .order("nome", { ascending: true }),
+      // regra do original: só servos escalados como "Servo de Quarto"
+      // (qualquer dia) podem ser alocados em quartos
+      supabase
+        .from("escalas")
+        .select("servo_id, funcoes!inner(nome)")
+        .eq("funcoes.nome", "Servo de Quarto"),
+    ]);
 
   if (quartosRes.error) throw new Error(`Erro ao carregar quartos: ${quartosRes.error.message}`);
 
@@ -90,9 +97,13 @@ export async function getQuartosData(): Promise<QuartosData> {
     encontristas: (encPorQuarto.get(q.id) ?? []).sort(ordenar),
   }));
 
+  const servosDeQuarto = new Set((escalaQuartoRes.data ?? []).map((e) => e.servo_id));
+
   return {
     quartos,
-    servosDisponiveis: (servosRes.data ?? []).filter((s) => !servosAlocados.has(s.id)),
+    servosDisponiveis: (servosRes.data ?? []).filter(
+      (s) => servosDeQuarto.has(s.id) && !servosAlocados.has(s.id),
+    ),
     encontristasDisponiveis: (encRes.data ?? []).filter((e) => !encAlocados.has(e.id)),
   };
 }
