@@ -45,7 +45,7 @@ const NAV: NavItem[] = [
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },
   { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },
   { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },
-  { href: "/uniformes", label: "Uniformes", icon: Shirt, pronto: false },
+  { href: "/uniformes", label: "Uniformes", icon: Shirt, pronto: true },
   { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: true },
 ];
 
@@ -65,7 +65,7 @@ const NAV_SERVO: NavItem[] = [
   { href: "/dashboard", label: "Agenda", icon: Calendar, pronto: true },
   { href: "/perfil", label: "Perfil", icon: User, pronto: false },
   { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
-  { href: "/uniformes", label: "Uniforme", icon: Shirt, pronto: false },
+  { href: "/uniformes", label: "Uniforme", icon: Shirt, pronto: true },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },
   { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },
   { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: true },

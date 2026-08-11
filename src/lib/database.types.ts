@@ -674,6 +674,65 @@ export type Database = {
         }
         Relationships: []
       }
+      uniformes: {
+        Row: {
+          atualizado_em: string | null
+          blusa: string | null
+          calca: string | null
+          camisa: string | null
+          nao_quer: boolean
+          nome_camiseta: string | null
+          pago_integral: boolean
+          pago_sinal: boolean
+          qtd_blusas: number
+          qtd_calcas: number
+          qtd_camisas: number
+          servo_id: string
+          status: string
+          valor_total: number
+        }
+        Insert: {
+          atualizado_em?: string | null
+          blusa?: string | null
+          calca?: string | null
+          camisa?: string | null
+          nao_quer?: boolean
+          nome_camiseta?: string | null
+          pago_integral?: boolean
+          pago_sinal?: boolean
+          qtd_blusas?: number
+          qtd_calcas?: number
+          qtd_camisas?: number
+          servo_id: string
+          status?: string
+          valor_total?: number
+        }
+        Update: {
+          atualizado_em?: string | null
+          blusa?: string | null
+          calca?: string | null
+          camisa?: string | null
+          nao_quer?: boolean
+          nome_camiseta?: string | null
+          pago_integral?: boolean
+          pago_sinal?: boolean
+          qtd_blusas?: number
+          qtd_calcas?: number
+          qtd_camisas?: number
+          servo_id?: string
+          status?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "uniformes_servo_id_fkey"
+            columns: ["servo_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       financeiro_resumo: {
