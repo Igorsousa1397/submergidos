@@ -23,7 +23,6 @@ import {
   Shirt,
   FolderKanban,
   Megaphone,
-  Mail,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
@@ -73,7 +72,6 @@ const NAV_SERVO: NavItem[] = [
   { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
   { href: "/termo-servo", label: "Termo", icon: FileText, pronto: false },
   { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },
-  { href: "/cartas", label: "Cartas", icon: Mail, pronto: false },
 ];
 
 export function DashboardShell({

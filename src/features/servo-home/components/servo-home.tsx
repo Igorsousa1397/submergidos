@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Megaphone, Mail, AlertTriangle, BedDouble, ChevronDown, ChevronUp } from "lucide-react";
+import { Megaphone, AlertTriangle, BedDouble, ChevronDown, ChevronUp } from "lucide-react";
 import type { ServoHomeData } from "../queries";
 
 type Aba = "agenda" | "escalas" | "ministracoes";
@@ -116,10 +116,6 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
         <Link href="/avisos" className={`${cardCls} p-4 transition active:scale-[0.98]`}>
           <Megaphone size={18} className="text-corrente" />
           <p className="mt-2 text-xs uppercase tracking-wide text-corrente">Avisos</p>
-        </Link>
-        <Link href="/em-breve?tela=Cartas" className={`${cardCls} p-4 transition active:scale-[0.98]`}>
-          <Mail size={18} className="text-corrente" />
-          <p className="mt-2 text-xs uppercase tracking-wide text-corrente">Cartas</p>
         </Link>
         <Link href="/ocorrencias" className={`${cardCls} p-4 transition active:scale-[0.98]`}>
           <AlertTriangle size={18} className="text-corrente" />
