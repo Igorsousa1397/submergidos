@@ -3,6 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Shirt, Minus, Plus } from "lucide-react";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// cartão com taxa, fórmula do original
+const valorCartao = (v: number) => Math.ceil((v / 0.9501) * 100) / 100;
 import {
   salvarPedido,
   naoQueroUniforme,
@@ -46,9 +51,11 @@ interface FormPedido {
 export function UniformeServoView({
   pedido,
   config,
+  retornoPago,
 }: {
   pedido: UniformeRow | null;
   config: UniformesConfig;
+  retornoPago?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -102,6 +109,24 @@ export function UniformeServoView({
           style={{ borderColor: "rgba(229,86,78,0.3)", background: "rgba(229,86,78,0.1)", color: "#f0a39e" }}
         >
           {erro}
+        </div>
+      )}
+
+      {/* retorno do Mercado Pago */}
+      {retornoPago === "true" && !pedido?.pago_integral && (
+        <div
+          className="rounded-card border px-4 py-3 text-sm"
+          style={{ borderColor: "rgba(18,181,166,0.35)", background: "rgba(18,181,166,0.08)", color: OK }}
+        >
+          ✓ Pagamento recebido! A confirmação aparece aqui em instantes — atualize a página.
+        </div>
+      )}
+      {retornoPago === "pending" && (
+        <div
+          className="rounded-card border px-4 py-3 text-sm"
+          style={{ borderColor: "rgba(224,162,60,0.4)", background: "rgba(224,162,60,0.08)", color: AVISO }}
+        >
+          ⏳ Pagamento em processamento — a confirmação aparece assim que for aprovada.
         </div>
       )}
 
@@ -408,9 +433,105 @@ function StatusPagamento({
           Prazo para o restante: {fmtData(config.data_limite_restante)}
         </p>
       )}
+
+      <PagarUniforme pedido={pedido} />
+
       <p className="text-[11px] text-corrente">
-        Pague via PIX com a liderança — o administrador confirma aqui.
+        Após pagar, a confirmação chega aqui automaticamente. Também dá pra pagar via
+        PIX direto com a liderança.
       </p>
+    </div>
+  );
+}
+
+// Botões de pagamento do uniforme (Mercado Pago): sinal 50% / integral;
+// com sinal pago, só o restante. Cartão tem taxa (fórmula do original).
+function PagarUniforme({ pedido }: { pedido: UniformeRow }) {
+  const [pagando, setPagando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  const total = pedido.valor_total;
+  const metade = Math.round((total / 2) * 100) / 100;
+  if (total <= 0) return null;
+
+  const pagar = async (tipo: string, valor: number) => {
+    if (pagando) return;
+    setPagando(true);
+    setErro("");
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/criar-pagamento`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON,
+          Authorization: `Bearer ${SUPABASE_ANON}`,
+        },
+        body: JSON.stringify({
+          encontristaId: pedido.servo_id,
+          nome: pedido.nome,
+          tipo,
+          valor,
+        }),
+      });
+      const data = await res.json();
+      if (data.init_point) window.location.href = data.init_point;
+      else {
+        setErro("Não foi possível gerar o pagamento. Tente novamente.");
+        setPagando(false);
+      }
+    } catch {
+      setErro("Não foi possível gerar o pagamento. Tente novamente.");
+      setPagando(false);
+    }
+  };
+
+  const Botao = ({ rotulo, tipo, valor }: { rotulo: string; tipo: string; valor: number }) => (
+    <button
+      onClick={() => pagar(tipo, valor)}
+      disabled={pagando}
+      className="w-full rounded-control py-2.5 text-xs font-bold text-white transition active:scale-[0.98] disabled:opacity-60"
+      style={{ background: "#009ee3" }}
+    >
+      {pagando ? "..." : `${rotulo} — ${brl(valor)}`}
+    </button>
+  );
+
+  return (
+    <div className="space-y-2 pt-1">
+      {!pedido.pago_sinal ? (
+        <>
+          <Botao rotulo="Sinal (50%) · PIX ou Boleto" tipo="uniforme_sinal_pix" valor={metade} />
+          <Botao
+            rotulo="Sinal (50%) · Cartão"
+            tipo="uniforme_sinal_credito"
+            valor={valorCartao(metade)}
+          />
+          <Botao rotulo="Integral · PIX ou Boleto" tipo="uniforme_integral_pix" valor={total} />
+          <Botao
+            rotulo="Integral · Cartão"
+            tipo="uniforme_integral_credito"
+            valor={valorCartao(total)}
+          />
+        </>
+      ) : (
+        <>
+          <Botao
+            rotulo="Pagar restante · PIX ou Boleto"
+            tipo="uniforme_integral_pix"
+            valor={metade}
+          />
+          <Botao
+            rotulo="Pagar restante · Cartão"
+            tipo="uniforme_integral_credito"
+            valor={valorCartao(metade)}
+          />
+        </>
+      )}
+      {erro && (
+        <p className="text-xs" style={{ color: "#f0a39e" }}>
+          {erro}
+        </p>
+      )}
     </div>
   );
 }

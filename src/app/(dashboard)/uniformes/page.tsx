@@ -7,16 +7,21 @@ import { isGestao } from "@/lib/permissions";
 
 // Uniformes: gestão vê o painel de pedidos; os demais veem o próprio pedido
 // (mesma dualidade do componente único do original, alternada por `edit`).
-export default async function UniformesPage() {
+export default async function UniformesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pago?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ pedidos, config }, perfilRes] = await Promise.all([
+  const [{ pedidos, config }, perfilRes, { pago: retornoPago }] = await Promise.all([
     getUniformesData(),
     supabase.from("profiles").select("role").eq("id", user.id).single(),
+    searchParams,
   ]);
 
   if (isGestao(perfilRes.data?.role ?? "servo")) {
@@ -24,5 +29,5 @@ export default async function UniformesPage() {
   }
 
   const meu = pedidos.find((p) => p.servo_id === user.id) ?? null;
-  return <UniformeServoView pedido={meu} config={config} />;
+  return <UniformeServoView pedido={meu} config={config} retornoPago={retornoPago} />;
 }

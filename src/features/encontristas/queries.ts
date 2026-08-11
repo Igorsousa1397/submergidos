@@ -18,7 +18,8 @@ export async function getEncontristas(filtros: FiltrosEncontristas = {}) {
   let query = supabase
     .from("encontristas")
     .select("*")
-    .order("nome", { ascending: true });
+    // ordem de inscrição (quem se inscreveu primeiro aparece primeiro)
+    .order("created_at", { ascending: true });
 
   if (filtros.sexo) query = query.eq("sexo", filtros.sexo);
   if (filtros.status) query = query.eq("status", filtros.status);

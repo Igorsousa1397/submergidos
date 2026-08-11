@@ -6,6 +6,7 @@ import {
   VALOR_SERVO,
   VALOR_COZINHA,
 } from "@/features/perfil/queries";
+import { PagarInscricao } from "@/features/perfil/components/pagar-inscricao";
 
 // Perfil do servo — SÓ leitura (versão enxuta). O diferencial vs. original:
 // mostra o status do pagamento da inscrição, que o servo não via em lugar
@@ -35,17 +36,26 @@ const maskCpf = (cpf: string | null) => {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 };
 
-export default async function PerfilPage() {
+export default async function PerfilPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pago?: string }>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const p = await getMeuPerfil(user.id);
+  const [p, { pago: retornoPago }] = await Promise.all([
+    getMeuPerfil(user.id),
+    searchParams,
+  ]);
   if (!p) redirect("/dashboard");
 
   const valor = p.roleSlug === "cozinha" ? VALOR_COZINHA : VALOR_SERVO;
+  const podePagar =
+    !p.isento && (p.pagamento === "pendente" || p.pagamento === "pagar_depois");
 
   // status do pagamento da inscrição
   const pagamento = p.isento
@@ -105,16 +115,40 @@ export default async function PerfilPage() {
         </p>
       </div>
 
+      {/* retorno do Mercado Pago */}
+      {retornoPago === "true" && p.pagamento !== "pago" && (
+        <div
+          className="rounded-card border px-4 py-3 text-sm"
+          style={{ borderColor: "rgba(18,181,166,0.35)", background: "rgba(18,181,166,0.08)", color: OK }}
+        >
+          ✓ Pagamento recebido! A confirmação aparece aqui em instantes — atualize a página.
+        </div>
+      )}
+      {retornoPago === "pending" && (
+        <div
+          className="rounded-card border px-4 py-3 text-sm"
+          style={{ borderColor: "rgba(224,162,60,0.4)", background: "rgba(224,162,60,0.08)", color: AVISO }}
+        >
+          ⏳ Seu pagamento está sendo processado — a confirmação aparece aqui assim que
+          for aprovada.
+        </div>
+      )}
+
       {/* pagamento da inscrição */}
       <div className={cardCls} style={{ borderLeft: `3px solid ${pagamento.cor}` }}>
-        <div className="p-4">
-          <p className="text-xs uppercase tracking-wide text-corrente">
-            Pagamento da inscrição
-          </p>
-          <p className="mt-1 font-display text-xl font-extrabold" style={{ color: pagamento.cor }}>
-            {pagamento.titulo}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-corrente">{pagamento.detalhe}</p>
+        <div className="space-y-3 p-4">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-corrente">
+              Pagamento da inscrição
+            </p>
+            <p className="mt-1 font-display text-xl font-extrabold" style={{ color: pagamento.cor }}>
+              {pagamento.titulo}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-corrente">{pagamento.detalhe}</p>
+          </div>
+          {podePagar && (
+            <PagarInscricao userId={user.id} nome={p.nome} email={p.email} valorPix={valor} />
+          )}
         </div>
       </div>
     </div>

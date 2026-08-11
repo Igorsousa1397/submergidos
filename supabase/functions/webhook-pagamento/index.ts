@@ -1,11 +1,15 @@
 // supabase/functions/webhook-pagamento/index.ts
-// Port da Cloud Function `webhookPagamento` (Firebase) → Edge Function (Deno).
 // O Mercado Pago chama esta URL quando há um pagamento; se aprovado,
-// marca o encontrista como pago (usa a service_role, contornando a RLS).
+// marca o pagamento no destino certo (usa a service_role, contornando a RLS).
+//
+// external_reference:
+//   "<uuid>"                    → encontrista (legado)
+//   "servo||<uuid>"             → inscrição de servo (profiles.pagamento)
+//   "uniforme_sinal||<uuid>"    → uniformes.pago_sinal
+//   "uniforme_integral||<uuid>" → uniformes.pago_integral (+ sinal)
 //
 // Deploy:  supabase functions deploy webhook-pagamento --no-verify-jwt
 // Secret:  supabase secrets set MP_ACCESS_TOKEN=...
-//          (SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY já existem no ambiente)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -31,15 +35,37 @@ Deno.serve(async (req) => {
     ).then((r) => r.json());
 
     if (payment.status === "approved") {
-      const encontristaId = payment.external_reference;
+      const ref = String(payment.external_reference ?? "");
       const supabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       );
-      await supabase
-        .from("encontristas")
-        .update({ status: "pago", pagamento_id: String(paymentId) })
-        .eq("id", encontristaId);
+
+      if (ref.includes("||")) {
+        const [tipo, id] = ref.split("||");
+        if (tipo.includes("uniforme_integral")) {
+          await supabase
+            .from("uniformes")
+            .update({ pago_integral: true, pago_sinal: true })
+            .eq("servo_id", id);
+        } else if (tipo.includes("uniforme_sinal")) {
+          await supabase
+            .from("uniformes")
+            .update({ pago_sinal: true })
+            .eq("servo_id", id);
+        } else if (tipo.includes("servo")) {
+          await supabase
+            .from("profiles")
+            .update({ pagamento: "pago", pago_em: new Date().toISOString() })
+            .eq("id", id);
+        }
+      } else {
+        // legado: inscrição de encontrista
+        await supabase
+          .from("encontristas")
+          .update({ status: "pago", pagamento_id: String(paymentId) })
+          .eq("id", ref);
+      }
     }
 
     return new Response("ok", { status: 200 });
