@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   FolderKanban,
@@ -47,13 +47,36 @@ const inputCls =
 
 type Aba = "perfis" | "escalas" | "funcoes";
 
-export function BackOfficeView({ dados }: { dados: BackOfficeData }) {
+export function BackOfficeView({ dados: dadosIniciais }: { dados: BackOfficeData }) {
   const router = useRouter();
+  const [dados, setDados] = useState(dadosIniciais);
+  useEffect(() => setDados(dadosIniciais), [dadosIniciais]);
+
   const [aba, setAba] = useState<Aba>("escalas");
   const [erro, setErro] = useState("");
   const [pending, startTransition] = useTransition();
 
-  // roda action + refresh (dados voltam frescos do RSC)
+  // Atualiza a tela na hora e persiste em seguida; se o servidor recusar,
+  // volta ao estado anterior. Sem router.refresh(): o refresh fazia a página
+  // suspender no loading, remontando tudo — o card do servo fechava e o
+  // clique em andamento se perdia.
+  const aplicar = (
+    mutar: (d: BackOfficeData) => BackOfficeData,
+    action: () => Promise<{ ok: boolean; erro?: string }>,
+  ) => {
+    setErro("");
+    const anterior = dados;
+    setDados(mutar(dados));
+    startTransition(async () => {
+      const res = await action();
+      if (!res.ok) {
+        setDados(anterior);
+        setErro(res.erro ?? "Não foi possível salvar.");
+      }
+    });
+  };
+
+  // Para criações, em que o id vem do servidor: roda a action e recarrega.
   const rodar = (fn: () => Promise<{ ok: boolean; erro?: string }>) => {
     setErro("");
     startTransition(async () => {
@@ -104,14 +127,34 @@ export function BackOfficeView({ dados }: { dados: BackOfficeData }) {
         </div>
       )}
 
-      {aba === "perfis" && <TabPerfis dados={dados} rodar={rodar} pending={pending} />}
-      {aba === "escalas" && <TabEscalas dados={dados} rodar={rodar} pending={pending} />}
-      {aba === "funcoes" && <TabFuncoes dados={dados} rodar={rodar} pending={pending} />}
+      {aba === "perfis" && (
+        <TabPerfis dados={dados} aplicar={aplicar} rodar={rodar} pending={pending} />
+      )}
+      {aba === "escalas" && (
+        <TabEscalas dados={dados} aplicar={aplicar} setDados={setDados} pending={pending} />
+      )}
+      {aba === "funcoes" && (
+        <TabFuncoes dados={dados} aplicar={aplicar} rodar={rodar} pending={pending} />
+      )}
     </div>
   );
 }
 
 type Rodar = (fn: () => Promise<{ ok: boolean; erro?: string }>) => void;
+type Aplicar = (
+  mutar: (d: BackOfficeData) => BackOfficeData,
+  action: () => Promise<{ ok: boolean; erro?: string }>,
+) => void;
+
+// helpers de mutação local
+const comUsuario = (
+  d: BackOfficeData,
+  id: string,
+  patch: (u: UsuarioBack) => UsuarioBack,
+): BackOfficeData => ({
+  ...d,
+  usuarios: d.usuarios.map((u) => (u.id === id ? patch(u) : u)),
+});
 
 // linha-checkbox custom (quadradinho + ✓), padrão visual do original
 function CheckRow({
@@ -152,7 +195,17 @@ function CheckRow({
 // ============================================================
 //  ABA PERFIS — permissões de telas por perfil + novo perfil
 // ============================================================
-function TabPerfis({ dados, rodar, pending }: { dados: BackOfficeData; rodar: Rodar; pending: boolean }) {
+function TabPerfis({
+  dados,
+  aplicar,
+  rodar,
+  pending,
+}: {
+  dados: BackOfficeData;
+  aplicar: Aplicar;
+  rodar: Rodar;
+  pending: boolean;
+}) {
   const [aberto, setAberto] = useState<string | null>(null);
   const [shNovo, setShNovo] = useState(false);
   const [nome, setNome] = useState("");
@@ -253,7 +306,24 @@ function TabPerfis({ dados, rodar, pending }: { dados: BackOfficeData; rodar: Ro
                     ativo={r.telas.includes(t.id)}
                     cor={OK}
                     disabled={pending}
-                    onClick={() => rodar(() => alternarTelaPerfil(r.slug, t.id))}
+                    onClick={() =>
+                      aplicar(
+                        (d) => ({
+                          ...d,
+                          roles: d.roles.map((x) =>
+                            x.slug === r.slug
+                              ? {
+                                  ...x,
+                                  telas: x.telas.includes(t.id)
+                                    ? x.telas.filter((s) => s !== t.id)
+                                    : [...x.telas, t.id],
+                                }
+                              : x,
+                          ),
+                        }),
+                        () => alternarTelaPerfil(r.slug, t.id),
+                      )
+                    }
                   />
                 ))}
               </div>
@@ -268,7 +338,17 @@ function TabPerfis({ dados, rodar, pending }: { dados: BackOfficeData; rodar: Ro
 // ============================================================
 //  ABA ESCALAS — usuários, perfil, líder de célula, escala por dia
 // ============================================================
-function TabEscalas({ dados, rodar, pending }: { dados: BackOfficeData; rodar: Rodar; pending: boolean }) {
+function TabEscalas({
+  dados,
+  aplicar,
+  setDados,
+  pending,
+}: {
+  dados: BackOfficeData;
+  aplicar: Aplicar;
+  setDados: React.Dispatch<React.SetStateAction<BackOfficeData>>;
+  pending: boolean;
+}) {
   const [busca, setBusca] = useState("");
   const [fPerfil, setFPerfil] = useState("todos");
   const [aberto, setAberto] = useState<string | null>(null);
@@ -351,7 +431,8 @@ function TabEscalas({ dados, rodar, pending }: { dados: BackOfficeData; rodar: R
             funcoes={dados.funcoes}
             aberto={aberto === u.id}
             onToggle={() => setAberto((v) => (v === u.id ? null : u.id))}
-            rodar={rodar}
+            aplicar={aplicar}
+            setDados={setDados}
             pending={pending}
           />
         ))
@@ -366,7 +447,8 @@ function CardUsuario({
   funcoes,
   aberto,
   onToggle,
-  rodar,
+  aplicar,
+  setDados,
   pending,
 }: {
   u: UsuarioBack;
@@ -374,7 +456,8 @@ function CardUsuario({
   funcoes: FuncaoBack[];
   aberto: boolean;
   onToggle: () => void;
-  rodar: Rodar;
+  aplicar: Aplicar;
+  setDados: React.Dispatch<React.SetStateAction<BackOfficeData>>;
   pending: boolean;
 }) {
   const [shTelas, setShTelas] = useState(false);
@@ -385,6 +468,30 @@ function CardUsuario({
   // telas do perfil já cobrem — extras só oferecem o que falta
   const telasDoPerfil = role?.telas ?? [];
   const telasDisponiveis = TELAS.filter((t) => !telasDoPerfil.includes(t.id));
+
+  // escala entra na lista assim que o servidor devolve o id da linha
+  // (sem recarregar a página, pra não fechar o card)
+  const adicionarFuncao = (funcaoId: string, dia: string, periodo: string | null) => {
+    const fn = funcoes.find((f) => f.id === funcaoId);
+    if (!fn) return;
+    aplicar(
+      (d) => d, // nada otimista: só entra depois de confirmado (o banco valida conflito)
+      async () => {
+        const res = await adicionarEscala(u.id, funcaoId, dia, periodo);
+        if (res.ok)
+          setDados((d) =>
+            comUsuario(d, u.id, (x) => ({
+              ...x,
+              escalas: [
+                ...x.escalas,
+                { id: res.id, dia, periodo, funcaoId, funcaoNome: fn.nome },
+              ],
+            })),
+          );
+        return res;
+      },
+    );
+  };
 
   return (
     <div className={cardCls} style={{ borderLeft: `3px solid ${role?.cor ?? OK}` }}>
@@ -404,7 +511,13 @@ function CardUsuario({
         </button>
         <select
           value={u.role}
-          onChange={(e) => rodar(() => mudarPerfil(u.id, e.target.value))}
+          onChange={(e) => {
+            const novo = e.target.value;
+            aplicar(
+              (d) => comUsuario(d, u.id, (x) => ({ ...x, role: novo })),
+              () => mudarPerfil(u.id, novo),
+            );
+          }}
           disabled={pending}
           onClick={(e) => e.stopPropagation()}
           className="shrink-0 rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-2 py-1.5 text-xs text-luz outline-none disabled:opacity-50"
@@ -437,7 +550,17 @@ function CardUsuario({
                 ] as [boolean, string][]).map(([val, label]) => (
                   <button
                     key={label}
-                    onClick={() => rodar(() => definirLiderCelula(u.id, val))}
+                    onClick={() =>
+                      aplicar(
+                        (d) =>
+                          comUsuario(d, u.id, (x) => ({
+                            ...x,
+                            lider_celula: val,
+                            celula: val ? x.celula : null,
+                          })),
+                        () => definirLiderCelula(u.id, val),
+                      )
+                    }
                     disabled={pending}
                     className="flex-1 rounded-control border py-2 text-xs font-semibold transition disabled:opacity-50"
                     style={
@@ -455,7 +578,13 @@ function CardUsuario({
               {u.lider_celula && (
                 <select
                   value={u.celula ?? ""}
-                  onChange={(e) => rodar(() => definirCelula(u.id, e.target.value))}
+                  onChange={(e) => {
+                    const nova = e.target.value;
+                    aplicar(
+                      (d) => comUsuario(d, u.id, (x) => ({ ...x, celula: nova || null })),
+                      () => definirCelula(u.id, nova),
+                    );
+                  }}
                   disabled={pending}
                   className={inputCls}
                 >
@@ -494,7 +623,18 @@ function CardUsuario({
                       ativo={u.telas_extra.includes(t.id)}
                       cor={AZUL}
                       disabled={pending}
-                      onClick={() => rodar(() => alternarTelaExtra(u.id, t.id))}
+                      onClick={() =>
+                        aplicar(
+                          (d) =>
+                            comUsuario(d, u.id, (x) => ({
+                              ...x,
+                              telas_extra: x.telas_extra.includes(t.id)
+                                ? x.telas_extra.filter((s) => s !== t.id)
+                                : [...x.telas_extra, t.id],
+                            })),
+                          () => alternarTelaExtra(u.id, t.id),
+                        )
+                      }
                     />
                   ))}
                 </div>
@@ -519,7 +659,16 @@ function CardUsuario({
                   {doDia.map((e) => (
                     <button
                       key={e.id}
-                      onClick={() => rodar(() => removerEscala(e.id))}
+                      onClick={() =>
+                        aplicar(
+                          (d) =>
+                            comUsuario(d, u.id, (x) => ({
+                              ...x,
+                              escalas: x.escalas.filter((s) => s.id !== e.id),
+                            })),
+                          () => removerEscala(e.id),
+                        )
+                      }
                       disabled={pending}
                       className="flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition disabled:opacity-50"
                       style={{ color: cor, background: `${cor}18`, border: `1px solid ${cor}44` }}
@@ -535,9 +684,7 @@ function CardUsuario({
                   cor={cor}
                   funcoes={funcoes}
                   pending={pending}
-                  onAdd={(funcaoId, periodo) =>
-                    rodar(() => adicionarEscala(u.id, funcaoId, dia, periodo))
-                  }
+                  onAdd={(funcaoId, periodo) => adicionarFuncao(funcaoId, dia, periodo)}
                 />
               </div>
             );
@@ -639,7 +786,17 @@ function AddFuncaoDia({
 // ============================================================
 //  ABA FUNÇÕES — catálogo, líderes responsáveis, quem está escalado
 // ============================================================
-function TabFuncoes({ dados, rodar, pending }: { dados: BackOfficeData; rodar: Rodar; pending: boolean }) {
+function TabFuncoes({
+  dados,
+  aplicar,
+  rodar,
+  pending,
+}: {
+  dados: BackOfficeData;
+  aplicar: Aplicar;
+  rodar: Rodar;
+  pending: boolean;
+}) {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState<string | null>(null);
   const [shNova, setShNova] = useState(false);
@@ -768,7 +925,7 @@ function TabFuncoes({ dados, rodar, pending }: { dados: BackOfficeData; rodar: R
                   funcaoNome={f.nome}
                   roles={dados.roles}
                   liderMap={dados.liderMap}
-                  rodar={rodar}
+                  aplicar={aplicar}
                   pending={pending}
                 />
 
@@ -846,13 +1003,13 @@ function LideresEditor({
   funcaoNome,
   roles,
   liderMap,
-  rodar,
+  aplicar,
   pending,
 }: {
   funcaoNome: string;
   roles: RoleBack[];
   liderMap: Record<string, string[]>;
-  rodar: Rodar;
+  aplicar: Aplicar;
   pending: boolean;
 }) {
   const [sh, setSh] = useState(false);
@@ -879,16 +1036,16 @@ function LideresEditor({
               ativo={atual.includes(r.slug)}
               cor={AZUL}
               disabled={pending}
-              onClick={() =>
-                rodar(() =>
-                  salvarLideresFuncao(
-                    funcaoNome,
-                    atual.includes(r.slug)
-                      ? atual.filter((s) => s !== r.slug)
-                      : [...atual, r.slug],
-                  ),
-                )
-              }
+              onClick={() => {
+                const novos = atual.includes(r.slug)
+                  ? atual.filter((s) => s !== r.slug)
+                  : [...atual, r.slug];
+                const final = novos.length > 0 ? novos : ["lider_staff"];
+                aplicar(
+                  (d) => ({ ...d, liderMap: { ...d.liderMap, [funcaoNome]: final } }),
+                  () => salvarLideresFuncao(funcaoNome, novos),
+                );
+              }}
             />
           ))}
         </div>

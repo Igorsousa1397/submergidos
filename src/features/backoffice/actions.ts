@@ -82,24 +82,27 @@ export async function adicionarEscala(
 ) {
   const supabase = await createClient();
   const erroAdmin = await exigirAdmin(supabase);
-  if (erroAdmin) return { ok: false, erro: erroAdmin };
+  if (erroAdmin) return { ok: false as const, erro: erroAdmin };
   if (!DIAS_ESCALA.includes(dia as (typeof DIAS_ESCALA)[number]))
-    return { ok: false, erro: "Dia inválido." };
+    return { ok: false as const, erro: "Dia inválido." };
 
-  const { error } = await supabase
+  // devolve o id para a UI atualizar sem recarregar a página
+  const { data, error } = await supabase
     .from("escalas")
-    .insert({ servo_id: servoId, funcao_id: funcaoId, dia, periodo });
+    .insert({ servo_id: servoId, funcao_id: funcaoId, dia, periodo })
+    .select("id")
+    .single();
 
   if (error) {
     // trigger do banco: Servo de Quarto × Templo/Som/Cozinha
     if (error.message.includes("Conflito"))
-      return { ok: false, erro: error.message.replace(/^.*Conflito:/, "Conflito:") };
+      return { ok: false as const, erro: error.message.replace(/^.*Conflito:/, "Conflito:") };
     if (error.code === "23505")
-      return { ok: false, erro: "Este servo já está nessa função nesse dia." };
-    return { ok: false, erro: error.message };
+      return { ok: false as const, erro: "Este servo já está nessa função nesse dia." };
+    return { ok: false as const, erro: error.message };
   }
   revalidar();
-  return { ok: true };
+  return { ok: true as const, id: data.id };
 }
 
 export async function removerEscala(escalaId: string) {
