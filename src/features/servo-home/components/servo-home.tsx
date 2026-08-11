@@ -121,11 +121,11 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
           <Mail size={18} className="text-corrente" />
           <p className="mt-2 text-xs uppercase tracking-wide text-corrente">Cartas</p>
         </Link>
-        <div className={`${cardCls} p-4`}>
+        <Link href="/ocorrencias" className={`${cardCls} p-4 transition active:scale-[0.98]`}>
           <AlertTriangle size={18} className="text-corrente" />
           <p className="mt-1 font-display text-2xl font-extrabold text-luz">{dados.ocorrencias}</p>
           <p className="text-xs uppercase tracking-wide text-corrente">Ocorrências</p>
-        </div>
+        </Link>
         <div className={`${cardCls} p-4`}>
           <BedDouble size={18} className="text-corrente" />
           <p className="mt-1 font-display text-2xl font-extrabold text-luz">{dados.quartos}</p>

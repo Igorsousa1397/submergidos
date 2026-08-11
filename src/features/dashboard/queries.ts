@@ -71,7 +71,11 @@ export async function getDashboard(): Promise<DashboardData> {
     await Promise.all([
       supabase.from("encontristas").select("id", { count: "exact", head: true }).eq("chegou", true),
       supabase.from("quartos").select("id", { count: "exact", head: true }),
-      supabase.from("ocorrencias").select("id", { count: "exact", head: true }),
+      // como no original: o contador é de ocorrências NÃO resolvidas
+      supabase
+        .from("ocorrencias")
+        .select("id", { count: "exact", head: true })
+        .eq("resolvido", false),
       supabase.from("onibus").select("id"),
       supabase.from("profiles").select("role, pagamento, ativo"),
       supabase.from("roles").select("slug, isento_pagamento"),

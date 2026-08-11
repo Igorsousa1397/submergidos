@@ -29,7 +29,11 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
   const supabase = await createClient();
 
   const [ocorr, quartos, agendaRes, escalasRes] = await Promise.all([
-    supabase.from("ocorrencias").select("id", { count: "exact", head: true }),
+    // como no original: conta só as NÃO resolvidas
+    supabase
+      .from("ocorrencias")
+      .select("id", { count: "exact", head: true })
+      .eq("resolvido", false),
     supabase.from("quartos").select("id", { count: "exact", head: true }),
     supabase
       .from("agenda")
