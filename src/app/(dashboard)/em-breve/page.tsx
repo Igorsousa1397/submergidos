@@ -10,7 +10,7 @@ export default async function EmBrevePage({
   return (
     <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center px-6 text-center">
       <div className="w-full max-w-md space-y-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.5)] text-3xl">
+        <div className="flutuar mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.5)] text-3xl">
           🌊
         </div>
         <h1 className="font-display text-2xl font-extrabold text-luz">

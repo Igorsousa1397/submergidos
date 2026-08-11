@@ -55,3 +55,80 @@ body {
   color: var(--espuma);
   text-shadow: 0 0 28px rgba(164,214,232,.55), 0 0 60px rgba(20,105,151,.35);
 }
+
+/* ============================================================
+   Animações do tema — decorativas, CSS puro.
+   Tudo desliga em prefers-reduced-motion (acessibilidade).
+   ============================================================ */
+
+/* bolha ambiente: sobe a tela inteira, com deriva lateral e fade */
+@keyframes bolha-sobe {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10%  { opacity: var(--bolha-op, 0.3); }
+  85%  { opacity: var(--bolha-op, 0.3); }
+  100% { transform: translateY(-105vh) translateX(var(--bolha-deriva, 16px)) scale(1.15); opacity: 0; }
+}
+.bolha {
+  position: absolute;
+  bottom: -24px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, rgba(220,241,248,.5), rgba(164,214,232,.18) 60%, transparent);
+  box-shadow: inset 0 0 4px rgba(220,241,248,.35);
+  animation: bolha-sobe var(--bolha-dur, 14s) linear infinite;
+  animation-delay: var(--bolha-delay, 0s);
+  pointer-events: none;
+}
+
+/* bolhas do loader "Submergindo…": trajeto curto, em loop */
+@keyframes bolha-loader {
+  0%   { transform: translateY(10px) scale(.7); opacity: 0; }
+  30%  { opacity: .9; }
+  100% { transform: translateY(-26px) scale(1.05); opacity: 0; }
+}
+.bolha-loader {
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, rgba(220,241,248,.9), rgba(164,214,232,.4) 65%, transparent);
+  animation: bolha-loader 1.5s ease-in infinite;
+}
+
+/* check-in confirmado: card "enche de água" uma vez e o nível se dissolve */
+@keyframes encher-agua {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes sumir {
+  to { opacity: 0; }
+}
+.agua-sobe {
+  background: linear-gradient(
+    180deg,
+    rgba(18,181,166,.32),
+    rgba(18,181,166,.14) 30%,
+    rgba(18,181,166,.05)
+  );
+  animation:
+    encher-agua .7s cubic-bezier(.22,.9,.35,1) forwards,
+    sumir .8s ease .8s forwards;
+}
+
+/* pop do círculo de check ao confirmar */
+@keyframes pop-check {
+  0%   { transform: scale(.4); }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.pop-check { animation: pop-check .35s cubic-bezier(.22,.9,.35,1); }
+
+/* flutuar suave (emoji 🌊 do em-breve etc.) */
+@keyframes flutuar {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+.flutuar { animation: flutuar 3.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bolha, .bolha-loader, .agua-sobe, .pop-check, .flutuar {
+    animation: none !important;
+  }
+  .bolha, .agua-sobe { opacity: 0 !important; }
+}

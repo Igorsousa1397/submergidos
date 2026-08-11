@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { entrar } from "./actions";
+import { Bolhas } from "@/components/bolhas";
 
 // Links de apoio (tema Submergidos). Reset de senha e pedido de acesso
 // vão pro WhatsApp do suporte — não há fluxo de auto-reset no projeto ainda.
@@ -16,7 +17,8 @@ export default async function LoginPage({
 }) {
   const { erro } = await searchParams;
   return (
-    <div data-zone="deep" className="min-h-screen">
+    <div data-zone="deep" className="relative min-h-screen overflow-hidden">
+      <Bolhas quantidade={18} />
       {/* barra do topo com voltar (igual ao pagamento) */}
       <div className="sticky top-0 z-50 flex items-center border-b border-[rgba(164,214,232,0.12)] px-4 py-3.5">
         <Link
@@ -28,7 +30,7 @@ export default async function LoginPage({
         </Link>
       </div>
 
-      <div className="flex min-h-[calc(100vh-60px)] flex-col items-center justify-center px-6">
+      <div className="relative z-10 flex min-h-[calc(100vh-60px)] flex-col items-center justify-center px-6">
         <div className="w-full max-w-sm">
         <h1 className="display-glow mb-1 text-center text-4xl">Submergidos</h1>
         <p className="mb-8 text-center text-sm tracking-[0.25em] text-raso uppercase">

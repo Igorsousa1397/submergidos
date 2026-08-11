@@ -43,6 +43,9 @@ export function CheckinView({
   const [busca, setBusca] = useState("");
   const [scanning, setScanning] = useState(false);
   const [toast, setToast] = useState<{ tipo: "ok" | "erro"; msg: string } | null>(null);
+  // id do card recém-confirmado: só ele "enche de água" (não anima os que
+  // já estavam confirmados ao trocar de aba)
+  const [recemChegou, setRecemChegou] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -50,6 +53,12 @@ export function CheckinView({
     const t = setTimeout(() => setToast(null), 3500);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+    if (!recemChegou) return;
+    const t = setTimeout(() => setRecemChegou(null), 1800);
+    return () => clearTimeout(t);
+  }, [recemChegou]);
 
   // contadores GLOBAIS (todos os sexos), como na referência
   const stats = useMemo(() => {
@@ -113,6 +122,7 @@ export function CheckinView({
       setSexo(anterior.sexo);
       setSub("confirmados");
     }
+    setRecemChegou(novo ? id : null);
 
     startTransition(async () => {
       const res = await alternarCheckin(id, novo);
@@ -311,9 +321,13 @@ export function CheckinView({
             return (
               <div
                 key={e.id}
-                className={`${cardCls} flex items-center gap-3 p-4`}
+                className={`${cardCls} relative flex items-center gap-3 overflow-hidden p-4`}
                 style={e.chegou ? { borderLeft: `3px solid ${OK}` } : undefined}
               >
+                {/* água subindo no card recém-confirmado (decorativo, roda 1x) */}
+                {recemChegou === e.id && (
+                  <span aria-hidden className="agua-sobe pointer-events-none absolute inset-0" />
+                )}
                 {/* toca no círculo/nome pra alternar chegada */}
                 <button
                   onClick={() => alternar(e.id, !e.chegou)}
@@ -321,7 +335,9 @@ export function CheckinView({
                   className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:opacity-60"
                 >
                   <span
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition"
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
+                      recemChegou === e.id ? "pop-check" : ""
+                    }`}
                     style={
                       e.chegou
                         ? { background: OK, borderColor: OK }
