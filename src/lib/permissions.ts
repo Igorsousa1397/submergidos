@@ -26,6 +26,16 @@ export const isAdmin = (role: string): boolean =>
 export const isGestao = (role: string): boolean =>
   role === "admin" || role === "lider_geral" || role === "pastor";
 
+// Permissão de tela: gestão vê tudo; os demais dependem das telas do perfil
+// (roles.telas) ou das telas extras individuais (profiles.telas_extra),
+// concedidas no Back Office — porta do temPermissao do original.
+export const podeVerTela = (
+  tela: string,
+  role: string,
+  telasRole: string[],
+  telasExtra: string[],
+): boolean => isGestao(role) || telasRole.includes(tela) || telasExtra.includes(tela);
+
 export const isIsento = (role: string): boolean =>
   ISENTOS_PAGAMENTO.includes(role as RoleSlug);
 

@@ -1,26 +1,12 @@
 import { getServosData } from "@/features/servos/queries";
 import { ServosView } from "@/features/servos/components/servos-view";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { isAdmin, isGestao } from "@/lib/permissions";
+import { exigirTela } from "@/lib/acesso";
 
 // Server Component: busca no servidor (RLS aplicado), passa pro view client.
+// Acesso: gestão ou tela "servos" concedida no Back Office.
 export default async function ServosPage() {
-  const supabase = await createClient();
-  const [{ servos, roles, dataLimitePagamento }, perfilRes] = await Promise.all([
-    getServosData(),
-    supabase.auth
-      .getUser()
-      .then(({ data: { user } }) =>
-        user
-          ? supabase.from("profiles").select("role").eq("id", user.id).single()
-          : null,
-      ),
-  ]);
-
-  const role = perfilRes?.data?.role ?? "servo";
-  if (!isGestao(role)) redirect("/dashboard");
-  const admin = isAdmin(role);
+  const { admin } = await exigirTela("servos");
+  const { servos, roles, dataLimitePagamento } = await getServosData();
 
   return (
     <ServosView

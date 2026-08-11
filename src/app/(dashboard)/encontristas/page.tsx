@@ -1,8 +1,6 @@
 import { getEncontristas, getCelulas } from "@/features/encontristas/queries";
 import { inscricoesBloqueadas } from "@/features/inscricoes/config";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { isAdmin, isGestao } from "@/lib/permissions";
+import { exigirTela } from "@/lib/acesso";
 import {
   EncontristasView,
   type EncRow,
@@ -10,24 +8,14 @@ import {
 } from "@/features/encontristas/components/encontristas-view";
 
 // Server Component: busca no servidor (RLS aplicado), passa pro view client.
+// Acesso: gestão ou tela "enc" concedida no Back Office.
 export default async function EncontristasPage() {
-  const supabase = await createClient();
-  const [encontristas, celulas, bloqueadas, perfilRes] = await Promise.all([
+  const { admin } = await exigirTela("enc");
+  const [encontristas, celulas, bloqueadas] = await Promise.all([
     getEncontristas(),
     getCelulas(),
     inscricoesBloqueadas(),
-    supabase.auth
-      .getUser()
-      .then(({ data: { user } }) =>
-        user
-          ? supabase.from("profiles").select("role").eq("id", user.id).single()
-          : null,
-      ),
   ]);
-
-  const role = perfilRes?.data?.role ?? "servo";
-  if (!isGestao(role)) redirect("/dashboard");
-  const admin = isAdmin(role);
 
   return (
     <EncontristasView

@@ -47,8 +47,18 @@ const NAV: NavItem[] = [
   { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },
   { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },
   { href: "/uniformes", label: "Uniformes", icon: Shirt, pronto: false },
-  { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: false },
+  { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: true },
 ];
+
+// Telas de gestão que podem ser concedidas a um servo no Back Office —
+// aparecem no menu dele quando liberadas (roles.telas / telas_extra).
+const NAV_TELAS_EXTRAS: Record<string, NavItem> = {
+  servos: { href: "/servos", label: "Servos", icon: Users, pronto: true },
+  enc: { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true },
+  termo: { href: "/termos", label: "Termo (gestão)", icon: FileText, pronto: true },
+  onibus: { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
+  agenda: { href: "/agenda", label: "Agenda (gestão)", icon: Calendar, pronto: true },
+};
 
 // Menu do SERVO (espelha o app original: Perfil, Agenda, Avisos, Uniforme,
 // Ocorrências, Saúde, Quartos, Check-in, Termo, Achados & Perdidos, Cartas).
@@ -69,17 +79,27 @@ const NAV_SERVO: NavItem[] = [
 export function DashboardShell({
   nome,
   role,
+  telasLiberadas = [],
   children,
   sair,
 }: {
   nome: string;
   role: string;
+  telasLiberadas?: string[];
   children: React.ReactNode;
   sair: () => void;
 }) {
   const [aberto, setAberto] = useState(false);
   const pathname = usePathname();
-  const itens = isGestao(role) ? NAV : NAV_SERVO;
+  const itens = isGestao(role)
+    ? NAV
+    : [
+        ...NAV_SERVO,
+        // telas de gestão concedidas no Back Office entram no fim do menu
+        ...telasLiberadas
+          .map((id) => NAV_TELAS_EXTRAS[id])
+          .filter((item): item is NavItem => Boolean(item)),
+      ];
 
   return (
     <div data-zone="deep" className="min-h-screen">

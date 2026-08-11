@@ -1,26 +1,12 @@
 import { getOnibusData } from "@/features/onibus/queries";
 import { OnibusView } from "@/features/onibus/components/onibus-view";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { isAdmin, isGestao } from "@/lib/permissions";
+import { exigirTela } from "@/lib/acesso";
 
 // Server Component: busca no servidor (RLS aplicado), passa pro view client.
+// Acesso: gestão ou tela "onibus" concedida no Back Office.
 export default async function OnibusPage() {
-  const supabase = await createClient();
-  const [{ onibus, servos }, perfilRes] = await Promise.all([
-    getOnibusData(),
-    supabase.auth
-      .getUser()
-      .then(({ data: { user } }) =>
-        user
-          ? supabase.from("profiles").select("role").eq("id", user.id).single()
-          : null,
-      ),
-  ]);
-
-  const role = perfilRes?.data?.role ?? "servo";
-  if (!isGestao(role)) redirect("/dashboard");
-  const admin = isAdmin(role);
+  const { admin } = await exigirTela("onibus");
+  const { onibus, servos } = await getOnibusData();
 
   return <OnibusView onibus={onibus} servos={servos} admin={admin} />;
 }

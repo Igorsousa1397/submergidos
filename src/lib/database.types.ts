@@ -452,10 +452,12 @@ export type Database = {
         Row: {
           ativo: boolean
           aprovado: boolean
+          celula: string | null
           cpf: string | null
           created_at: string | null
           email: string | null
           id: string
+          lider_celula: boolean
           nascimento: string | null
           nome: string
           pagamento: Database["public"]["Enums"]["servo_pagamento"]
@@ -466,14 +468,17 @@ export type Database = {
           primeiro: boolean
           role: string
           sexo: Database["public"]["Enums"]["sexo"] | null
+          telas_extra: string[]
         }
         Insert: {
           ativo?: boolean
           aprovado?: boolean
+          celula?: string | null
           cpf?: string | null
           created_at?: string | null
           email?: string | null
           id: string
+          lider_celula?: boolean
           nascimento?: string | null
           nome: string
           pagamento?: Database["public"]["Enums"]["servo_pagamento"]
@@ -482,16 +487,19 @@ export type Database = {
           pago?: boolean
           pago_em?: string | null
           primeiro?: boolean
+          telas_extra?: string[]
           role?: string
           sexo?: Database["public"]["Enums"]["sexo"] | null
         }
         Update: {
           ativo?: boolean
           aprovado?: boolean
+          celula?: string | null
           cpf?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
+          lider_celula?: boolean
           nascimento?: string | null
           nome?: string
           pagamento?: Database["public"]["Enums"]["servo_pagamento"]
@@ -500,6 +508,7 @@ export type Database = {
           pago?: boolean
           pago_em?: string | null
           primeiro?: boolean
+          telas_extra?: string[]
           role?: string
           sexo?: Database["public"]["Enums"]["sexo"] | null
         }
@@ -639,6 +648,7 @@ export type Database = {
           ordem: number | null
           pode_avisos: boolean
           slug: string
+          telas: string[]
         }
         Insert: {
           cor?: string | null
@@ -649,6 +659,7 @@ export type Database = {
           ordem?: number | null
           pode_avisos?: boolean
           slug: string
+          telas?: string[]
         }
         Update: {
           cor?: string | null
@@ -659,6 +670,7 @@ export type Database = {
           ordem?: number | null
           pode_avisos?: boolean
           slug?: string
+          telas?: string[]
         }
         Relationships: []
       }
