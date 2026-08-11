@@ -127,6 +127,17 @@ export function UniformeServoView({
 
       {prazoDefinido && prazoOk && (
         <>
+          {/* prazo aberto (banner do original) */}
+          <div
+            className="rounded-card border px-4 py-3 text-sm"
+            style={{ borderColor: "rgba(18,181,166,0.35)", background: "rgba(18,181,166,0.06)" }}
+          >
+            <p className="font-bold" style={{ color: OK }}>
+              Prazo aberto
+            </p>
+            <p className="text-xs text-corrente">Data limite: {fmtData(config.data_limite)}</p>
+          </div>
+
           {/* optou por não pedir */}
           {pedido?.nao_quer ? (
             <div className={`${cardCls} space-y-3 p-4 text-center`}>

@@ -63,7 +63,7 @@ const NAV_TELAS_EXTRAS: Record<string, NavItem> = {
 // Ocorrências, Saúde, Quartos, Check-in, Termo, Achados & Perdidos, Cartas).
 const NAV_SERVO: NavItem[] = [
   { href: "/dashboard", label: "Agenda", icon: Calendar, pronto: true },
-  { href: "/perfil", label: "Perfil", icon: User, pronto: false },
+  { href: "/perfil", label: "Perfil", icon: User, pronto: true },
   { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
   { href: "/uniformes", label: "Uniforme", icon: Shirt, pronto: true },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },

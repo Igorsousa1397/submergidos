@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboard } from "@/features/dashboard/queries";
 import { getServoHome } from "@/features/servo-home/queries";
@@ -12,11 +13,12 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const { data: perfil } = await supabase
     .from("profiles")
     .select("nome, role")
-    .eq("id", user!.id)
+    .eq("id", user.id)
     .single();
 
   const primeiroNomeServo = perfil?.nome?.split(" ")[0] ?? "servo";

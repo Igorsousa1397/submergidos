@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Megaphone, AlertTriangle, BedDouble, ChevronDown, ChevronUp } from "lucide-react";
 import type { ServoHomeData } from "../queries";
@@ -129,6 +129,9 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
         </div>
       </div>
 
+      {/* carrossel de pendências (como no original) */}
+      <BannerCarrossel banners={dados.banners} />
+
       {/* abas */}
       <div className="flex gap-2">
         {([
@@ -223,6 +226,114 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
         </div>
       )}
     </div>
+  );
+}
+
+const brl = (v: number) =>
+  `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const fmtPrazo = (iso: string | null | undefined) => {
+  if (!iso) return null;
+  const [y, m, d] = iso.split("T")[0].split("-");
+  return `${d}/${m}/${y}`;
+};
+
+// carrossel de pendências: desliza sozinho a cada 8s, pontinhos navegáveis
+// (o ativo vira a pílula verde, como no original)
+function BannerCarrossel({ banners }: { banners: import("../queries").BannerPendencia[] }) {
+  const [idx, setIdx] = useState(0);
+
+  // se a lista encolher (pendência resolvida), volta pro início
+  useEffect(() => {
+    if (idx >= banners.length) setIdx(0);
+  }, [banners.length, idx]);
+
+  useEffect(() => {
+    if (banners.length < 2) return;
+    const t = setInterval(() => setIdx((v) => (v + 1) % banners.length), 8000);
+    return () => clearInterval(t);
+  }, [banners.length]);
+
+  if (banners.length === 0) return null;
+
+  return (
+    <div>
+      <div className="overflow-hidden rounded-card">
+        <div
+          className="flex transition-transform duration-500 ease-out motion-reduce:transition-none"
+          style={{ transform: `translateX(-${Math.min(idx, banners.length - 1) * 100}%)` }}
+        >
+          {banners.map((b) => (
+            <div key={b.tipo} className="w-full shrink-0">
+              <BannerCard b={b} />
+            </div>
+          ))}
+        </div>
+      </div>
+      {banners.length > 1 && (
+        <div className="mt-2 flex items-center justify-center gap-1.5">
+          {banners.map((b, i) => (
+            <button
+              key={b.tipo}
+              onClick={() => setIdx(i)}
+              aria-label={`Ver pendência ${i + 1}`}
+              className="rounded-full transition-all"
+              style={
+                i === idx
+                  ? { width: 18, height: 6, background: "#12b5a6" }
+                  : { width: 6, height: 6, background: "rgba(164,214,232,0.25)" }
+              }
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// banner de pendência: informa e navega (pagamento é PIX manual — os
+// detalhes/status ficam no Perfil; uniforme resolve na tela de Uniforme)
+function BannerCard({ b }: { b: import("../queries").BannerPendencia }) {
+  const prazo = fmtPrazo(b.prazo);
+  const cfg = {
+    inscricao_pendente: {
+      cor: "#e5564e",
+      titulo: "⚠️ Pagamento da inscrição pendente",
+      texto: `Valor: ${b.valor ? brl(b.valor) : ""}${prazo ? ` · prazo ${prazo}` : ""} — toque para ver os detalhes`,
+    },
+    inscricao_pagar_depois: {
+      cor: "#0a84ff",
+      titulo: "📅 Pagamento combinado",
+      texto: `${b.valor ? brl(b.valor) : ""}${prazo ? ` até ${prazo}` : ""} — toque para ver os detalhes`,
+    },
+    uniforme_sem_pedido: {
+      cor: "#ff9f0a",
+      titulo: "🎽 Você ainda não fez seu pedido de uniforme",
+      texto: `${prazo ? `Prazo: ${prazo} · ` : ""}Toque para pedir`,
+    },
+    uniforme_sem_sinal: {
+      cor: "#e5564e",
+      titulo: "🎽 Uniforme aguardando o sinal (50%)",
+      texto: `${b.valor ? `Sinal: ${brl(b.valor)} · ` : ""}Toque para ver o pedido`,
+    },
+    uniforme_falta_restante: {
+      cor: "#ff9f0a",
+      titulo: "🎽 Sinal pago — falta o restante",
+      texto: `${b.valor ? `Restante: ${brl(b.valor)} · ` : ""}Toque para ver o pedido`,
+    },
+  }[b.tipo];
+
+  return (
+    <Link
+      href={b.href}
+      className="block rounded-card border p-4 transition active:scale-[0.99]"
+      style={{ borderColor: `${cfg.cor}55`, background: `${cfg.cor}0f` }}
+    >
+      <p className="text-sm font-bold" style={{ color: cfg.cor }}>
+        {cfg.titulo}
+      </p>
+      <p className="mt-0.5 text-xs text-corrente">{cfg.texto}</p>
+    </Link>
   );
 }
 
