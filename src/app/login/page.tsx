@@ -66,7 +66,7 @@ export default async function LoginPage({
             href="/cadastro-servo"
             className="text-sm font-semibold text-raso underline-offset-4 transition hover:text-luz hover:underline"
           >
-            Quero servir — fazer meu cadastro
+            Fazer meu cadastro como servo
           </Link>
           <a
             href={WHATSAPP_SENHA}

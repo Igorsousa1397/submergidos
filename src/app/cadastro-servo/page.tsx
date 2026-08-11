@@ -90,10 +90,7 @@ export default function CadastroServoPage() {
           ) : (
             /* ---- formulário ---- */
             <>
-              <h1 className="display-glow mb-1 text-center text-3xl">Quero Servir</h1>
-              <p className="mb-8 text-center text-sm uppercase tracking-[0.25em] text-raso">
-                Cadastro de servo
-              </p>
+              <h1 className="display-glow mb-8 text-center text-3xl">Cadastro de Servo</h1>
 
               <div className="space-y-3">
                 <input
