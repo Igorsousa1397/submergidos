@@ -40,7 +40,7 @@ const NAV: NavItem[] = [
   { href: "/termos", label: "Termo", icon: FileText, pronto: true },
   { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: false },
   { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
-  { href: "/agenda", label: "Agenda", icon: Calendar, pronto: false },
+  { href: "/agenda", label: "Agenda", icon: Calendar, pronto: true },
   { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: false },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: false },
   { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: false },

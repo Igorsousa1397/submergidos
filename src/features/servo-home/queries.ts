@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
+import { ordenarAgenda } from "@/features/agenda/shared";
 
 export interface AgendaItem {
   id: string;
   dia: string | null;
+  hora: string | null;
   titulo: string;
   ministrante: string | null;
   descricao: string | null;
@@ -31,8 +33,7 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
     supabase.from("quartos").select("id", { count: "exact", head: true }),
     supabase
       .from("agenda")
-      .select("id, dia, titulo, ministrante, descricao, aviso")
-      .order("ordem", { ascending: true }),
+      .select("id, dia, hora, ordem, titulo, ministrante, descricao, aviso"),
     supabase
       .from("escalas")
       .select("dia, periodo, funcoes(nome)")
@@ -49,7 +50,8 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
   return {
     ocorrencias: ocorr.count ?? 0,
     quartos: quartos.count ?? 0,
-    agenda: agendaRes.data ?? [],
+    // ordena quinta→domingo, depois por hora (mesma regra da tela de Agenda)
+    agenda: ordenarAgenda(agendaRes.data ?? []),
     escalas,
   };
 }

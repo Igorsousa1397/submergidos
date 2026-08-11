@@ -180,8 +180,9 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
                     </p>
                   )}
                   <p className="font-semibold text-luz">{item.titulo}</p>
-                  <p className="text-xs text-corrente">
+                  <p className="text-xs capitalize text-corrente">
                     {item.dia ?? ""}
+                    {item.hora ? ` · ${item.hora.slice(0, 5)}` : ""}
                     {item.ministrante ? ` · ${item.ministrante}` : ""}
                   </p>
                   {item.aviso && (

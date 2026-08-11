@@ -20,6 +20,7 @@ export type Database = {
           created_at: string | null
           descricao: string | null
           dia: string | null
+          hora: string | null
           id: string
           ministrante: string | null
           ordem: number | null
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string | null
           descricao?: string | null
           dia?: string | null
+          hora?: string | null
           id?: string
           ministrante?: string | null
           ordem?: number | null
@@ -40,6 +42,7 @@ export type Database = {
           created_at?: string | null
           descricao?: string | null
           dia?: string | null
+          hora?: string | null
           id?: string
           ministrante?: string | null
           ordem?: number | null
