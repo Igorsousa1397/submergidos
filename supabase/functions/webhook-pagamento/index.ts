@@ -3,10 +3,8 @@
 // marca o pagamento no destino certo (usa a service_role, contornando a RLS).
 //
 // external_reference:
-//   "<uuid>"                    → encontrista (legado)
-//   "servo||<uuid>"             → inscrição de servo (profiles.pagamento)
-//   "uniforme_sinal||<uuid>"    → uniformes.pago_sinal
-//   "uniforme_integral||<uuid>" → uniformes.pago_integral (+ sinal)
+//   "<uuid>"        → encontrista (legado)
+//   "servo||<uuid>" → inscrição de servo (profiles.pagamento)
 //
 // Deploy:  supabase functions deploy webhook-pagamento --no-verify-jwt
 // Secret:  supabase secrets set MP_ACCESS_TOKEN=...
@@ -43,17 +41,7 @@ Deno.serve(async (req) => {
 
       if (ref.includes("||")) {
         const [tipo, id] = ref.split("||");
-        if (tipo.includes("uniforme_integral")) {
-          await supabase
-            .from("uniformes")
-            .update({ pago_integral: true, pago_sinal: true })
-            .eq("servo_id", id);
-        } else if (tipo.includes("uniforme_sinal")) {
-          await supabase
-            .from("uniformes")
-            .update({ pago_sinal: true })
-            .eq("servo_id", id);
-        } else if (tipo.includes("servo")) {
+        if (tipo.includes("servo")) {
           await supabase
             .from("profiles")
             .update({ pagamento: "pago", pago_em: new Date().toISOString() })

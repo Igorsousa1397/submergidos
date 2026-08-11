@@ -25,14 +25,23 @@ export const DIA_ESCALA_COR: Record<string, string> = {
 export const TELAS: { id: string; label: string; href: string }[] = [
   { id: "servos", label: "Servos", href: "/servos" },
   { id: "enc", label: "Encontristas", href: "/encontristas" },
+  { id: "checkin", label: "Check-in", href: "/check-in" },
   { id: "termo", label: "Termo", href: "/termos" },
+  { id: "quartos", label: "Quartos", href: "/quartos" },
   { id: "onibus", label: "Ônibus", href: "/onibus" },
   { id: "agenda", label: "Agenda (gestão)", href: "/agenda" },
+  { id: "achados", label: "Achados & Perdidos", href: "/achados" },
   // dado sensível: conceder só à equipe de saúde (o RLS também respeita)
   { id: "saude", label: "Saúde", href: "/saude" },
   // equipe de mídia (quem NÃO autorizou uso de imagem)
   { id: "img", label: "Uso de Imagem", href: "/uso-imagem" },
 ];
+
+// Telas que TODO usuário logado enxerga — não entram no catálogo porque
+// não fazem sentido restringir (são o mínimo do dia a dia do servo).
+// Espelha as `telasFixas` do original: agenda/home, avisos, uniforme,
+// ocorrências — mais o próprio perfil.
+export const TELAS_FIXAS = ["/dashboard", "/perfil", "/avisos", "/ocorrencias"];
 
 // Mapa padrão função → perfis líderes responsáveis (portado do original).
 // Overrides ficam em app_config key='lider_map'; fallback final: lider_staff.

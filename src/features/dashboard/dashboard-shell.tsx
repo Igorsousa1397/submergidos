@@ -20,60 +20,42 @@ import {
   AlertTriangle,
   Search,
   Stethoscope,
-  Shirt,
   FolderKanban,
   Megaphone,
   LogOut,
   type LucideIcon,
 } from "lucide-react";
-import { isGestao } from "@/lib/permissions";
+import { isAdmin } from "@/lib/permissions";
 
-type NavItem = { href: string; label: string; icon: LucideIcon; pronto: boolean };
-
-// Menu de GESTÃO (admin, líder geral, pastor). `pronto: false` → /em-breve.
-const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Início", icon: Home, pronto: true },
-  { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
-  { href: "/servos", label: "Servos", icon: Users, pronto: true },
-  { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true },
-  { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
-  { href: "/termos", label: "Termo", icon: FileText, pronto: true },
-  { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: true },
-  { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
-  { href: "/agenda", label: "Agenda", icon: Calendar, pronto: true },
-  { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: true },
-  { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },
-  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: true },
-  { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: true },
-  { href: "/uniformes", label: "Uniformes", icon: Shirt, pronto: true },
-  { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: true },
-];
-
-// Telas de gestão que podem ser concedidas a um servo no Back Office —
-// aparecem no menu dele quando liberadas (roles.telas / telas_extra).
-const NAV_TELAS_EXTRAS: Record<string, NavItem> = {
-  servos: { href: "/servos", label: "Servos", icon: Users, pronto: true },
-  enc: { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true },
-  termo: { href: "/termos", label: "Termo (gestão)", icon: FileText, pronto: true },
-  onibus: { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true },
-  agenda: { href: "/agenda", label: "Agenda (gestão)", icon: Calendar, pronto: true },
-  saude: { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: true },
-  img: { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: true },
+// `tela` = id no catálogo do Back Office (aba Perfis). Sem `tela`, o item é
+// fixo — todo mundo vê. `soAdmin` restringe a admin/líder geral.
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  pronto: boolean;
+  tela?: string;
+  soAdmin?: boolean;
 };
 
-// Menu do SERVO (espelha o app original: Perfil, Agenda, Avisos, Uniforme,
-// Ocorrências, Saúde, Quartos, Check-in, Termo, Achados & Perdidos, Cartas).
-const NAV_SERVO: NavItem[] = [
-  { href: "/dashboard", label: "Agenda", icon: Calendar, pronto: true },
+// Menu único: o que cada pessoa enxerga sai das telas do PERFIL dela
+// (roles.telas) + telas extras individuais, definidas no Back Office.
+const NAV: NavItem[] = [
+  { href: "/dashboard", label: "Início", icon: Home, pronto: true },
   { href: "/perfil", label: "Perfil", icon: User, pronto: true },
   { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
-  { href: "/uniformes", label: "Uniforme", icon: Shirt, pronto: true },
+  { href: "/servos", label: "Servos", icon: Users, pronto: true, tela: "servos" },
+  { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true, tela: "enc" },
+  { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true, tela: "checkin" },
+  { href: "/termos", label: "Termo", icon: FileText, pronto: true, tela: "termo" },
+  { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: true, tela: "quartos" },
+  { href: "/onibus", label: "Ônibus", icon: Bus, pronto: true, tela: "onibus" },
+  { href: "/agenda", label: "Agenda", icon: Calendar, pronto: true, tela: "agenda" },
+  { href: "/uso-imagem", label: "Uso de Imagem", icon: Camera, pronto: true, tela: "img" },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: true },
-  // Saúde saiu do menu fixo do servo: dado sensível — entra via Back Office
-  { href: "/quartos", label: "Quartos", icon: BedDouble, pronto: true },
-  { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
-  { href: "/termo-servo", label: "Termo", icon: FileText, pronto: false },
-  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: true },
+  { href: "/achados", label: "Achados & Perdidos", icon: Search, pronto: true, tela: "achados" },
+  { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: true, tela: "saude" },
+  { href: "/back-office", label: "Back Office", icon: FolderKanban, pronto: true, soAdmin: true },
 ];
 
 export function DashboardShell({
@@ -91,15 +73,12 @@ export function DashboardShell({
 }) {
   const [aberto, setAberto] = useState(false);
   const pathname = usePathname();
-  const itens = isGestao(role)
-    ? NAV
-    : [
-        ...NAV_SERVO,
-        // telas de gestão concedidas no Back Office entram no fim do menu
-        ...telasLiberadas
-          .map((id) => NAV_TELAS_EXTRAS[id])
-          .filter((item): item is NavItem => Boolean(item)),
-      ];
+  const admin = isAdmin(role);
+  const itens = NAV.filter((item) => {
+    if (item.soAdmin) return admin;
+    if (!item.tela) return true; // tela fixa: todos veem
+    return admin || telasLiberadas.includes(item.tela);
+  });
 
   return (
     <div data-zone="deep" className="min-h-screen">

@@ -19,7 +19,7 @@ export interface EscalaItem {
 
 // Banners de pendência exibidos acima da agenda (no original era um carrossel)
 export interface BannerPendencia {
-  tipo: "inscricao_pendente" | "inscricao_pagar_depois" | "uniforme_sem_pedido" | "uniforme_sem_sinal" | "uniforme_falta_restante";
+  tipo: "inscricao_pendente" | "inscricao_pagar_depois";
   href: string;
   valor?: number;
   prazo?: string | null;
@@ -37,7 +37,7 @@ export interface ServoHomeData {
 export async function getServoHome(userId: string): Promise<ServoHomeData> {
   const supabase = await createClient();
 
-  const [ocorr, quartos, agendaRes, escalasRes, perfilRes, uniformeRes, cfgServosRes, cfgUniRes] =
+  const [ocorr, quartos, agendaRes, escalasRes, perfilRes, cfgServosRes] =
     await Promise.all([
       // como no original: conta só as NÃO resolvidas
       supabase
@@ -57,9 +57,7 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
         .select("role, pagamento, pagar_depois_data, roles(isento_pagamento)")
         .eq("id", userId)
         .single(),
-      supabase.from("uniformes").select("*").eq("servo_id", userId).maybeSingle(),
       supabase.from("app_config").select("value").eq("key", "servos").maybeSingle(),
-      supabase.from("app_config").select("value").eq("key", "uniformes").maybeSingle(),
     ]);
 
   const escalas: EscalaItem[] = (escalasRes.data ?? []).map((e) => ({
@@ -71,7 +69,6 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
 
   // ---- banners de pendência (porta dos slides do carrossel do original) ----
   const banners: BannerPendencia[] = [];
-  const hoje = new Date().toISOString().slice(0, 10);
 
   const perfil = perfilRes.data;
   const isento =
@@ -91,26 +88,6 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
         href: "/perfil",
         valor,
         prazo: perfil.pagar_depois_data,
-      });
-  }
-
-  const uniLimite =
-    (cfgUniRes.data?.value as { data_limite?: string | null } | null)?.data_limite ?? null;
-  if (uniLimite && hoje <= uniLimite) {
-    const uni = uniformeRes.data;
-    if (!uni)
-      banners.push({ tipo: "uniforme_sem_pedido", href: "/uniformes", prazo: uniLimite });
-    else if (!uni.nao_quer && !uni.pago_sinal && !uni.pago_integral)
-      banners.push({
-        tipo: "uniforme_sem_sinal",
-        href: "/uniformes",
-        valor: Number(uni.valor_total) / 2,
-      });
-    else if (!uni.nao_quer && uni.pago_sinal && !uni.pago_integral)
-      banners.push({
-        tipo: "uniforme_falta_restante",
-        href: "/uniformes",
-        valor: Number(uni.valor_total) / 2,
       });
   }
 

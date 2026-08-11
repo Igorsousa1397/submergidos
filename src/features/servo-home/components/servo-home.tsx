@@ -291,8 +291,8 @@ function BannerCarrossel({ banners }: { banners: import("../queries").BannerPend
   );
 }
 
-// banner de pendência: informa e navega (pagamento é PIX manual — os
-// detalhes/status ficam no Perfil; uniforme resolve na tela de Uniforme)
+// banner de pendência: informa e navega (o pagamento em si e o status
+// ficam no Perfil)
 function BannerCard({ b }: { b: import("../queries").BannerPendencia }) {
   const prazo = fmtPrazo(b.prazo);
   const cfg = {
@@ -305,21 +305,6 @@ function BannerCard({ b }: { b: import("../queries").BannerPendencia }) {
       cor: "#0a84ff",
       titulo: "📅 Pagamento combinado",
       texto: `${b.valor ? brl(b.valor) : ""}${prazo ? ` até ${prazo}` : ""} — toque para ver os detalhes`,
-    },
-    uniforme_sem_pedido: {
-      cor: "#ff9f0a",
-      titulo: "🎽 Você ainda não fez seu pedido de uniforme",
-      texto: `${prazo ? `Prazo: ${prazo} · ` : ""}Toque para pedir`,
-    },
-    uniforme_sem_sinal: {
-      cor: "#e5564e",
-      titulo: "🎽 Uniforme aguardando o sinal (50%)",
-      texto: `${b.valor ? `Sinal: ${brl(b.valor)} · ` : ""}Toque para ver o pedido`,
-    },
-    uniforme_falta_restante: {
-      cor: "#ff9f0a",
-      titulo: "🎽 Sinal pago — falta o restante",
-      texto: `${b.valor ? `Restante: ${brl(b.valor)} · ` : ""}Toque para ver o pedido`,
     },
   }[b.tipo];
 

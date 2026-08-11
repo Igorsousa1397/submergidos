@@ -1,22 +1,11 @@
-import { redirect } from "next/navigation";
 import { getAchados } from "@/features/achados/queries";
 import { AchadosView } from "@/features/achados/components/achados-view";
-import { createClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/permissions";
+import { exigirTela } from "@/lib/acesso";
 
-// Achados & Perdidos: aberto a todos os logados — quem acha registra,
-// quem entrega marca. Excluir é só admin.
+// Achados & Perdidos: acesso pela tela "achados" liberada no perfil
+// (Back Office). Quem acha registra, quem entrega marca; excluir é admin.
 export default async function AchadosPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const [achados, perfilRes] = await Promise.all([
-    getAchados(),
-    supabase.from("profiles").select("role").eq("id", user.id).single(),
-  ]);
-
-  return <AchadosView achados={achados} admin={isAdmin(perfilRes.data?.role ?? "servo")} />;
+  const { admin } = await exigirTela("achados");
+  const achados = await getAchados();
+  return <AchadosView achados={achados} admin={admin} />;
 }

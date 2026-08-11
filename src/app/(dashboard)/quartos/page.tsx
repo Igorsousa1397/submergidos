@@ -2,34 +2,32 @@ import { getQuartosData } from "@/features/quartos/queries";
 import { QuartosView } from "@/features/quartos/components/quartos-view";
 import { createClient } from "@/lib/supabase/server";
 import { podeGerenciarQuartos } from "@/lib/permissions";
+import { exigirTela } from "@/lib/acesso";
 
-// Quartos: todos os logados podem VER (o servo consulta a própria ala,
-// como no original); quem edita é admin/líder geral/líder de quartos.
+// Quartos: acesso pela tela "quartos" liberada no perfil (Back Office);
+// quem VÊ consulta a própria ala, e quem EDITA é admin/líder geral/líder
+// de quartos.
 export default async function QuartosPage() {
+  const { role } = await exigirTela("quartos");
   const supabase = await createClient();
+
   const [{ quartos, servosDisponiveis, encontristasDisponiveis }, perfilRes] =
     await Promise.all([
       getQuartosData(),
       supabase.auth
         .getUser()
         .then(({ data: { user } }) =>
-          user
-            ? supabase.from("profiles").select("role, sexo").eq("id", user.id).single()
-            : null,
+          user ? supabase.from("profiles").select("sexo").eq("id", user.id).single() : null,
         ),
     ]);
-
-  const role = perfilRes?.data?.role ?? "servo";
-  const edit = podeGerenciarQuartos(role);
-  const sexoUsuario = perfilRes?.data?.sexo ?? null;
 
   return (
     <QuartosView
       quartos={quartos}
       servosDisponiveis={servosDisponiveis}
       encontristasDisponiveis={encontristasDisponiveis}
-      edit={edit}
-      sexoUsuario={sexoUsuario}
+      edit={podeGerenciarQuartos(role)}
+      sexoUsuario={perfilRes?.data?.sexo ?? null}
     />
   );
 }
