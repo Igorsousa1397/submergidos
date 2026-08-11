@@ -34,6 +34,7 @@ type NavItem = { href: string; label: string; icon: LucideIcon; pronto: boolean 
 // Menu de GESTÃO (admin, líder geral, pastor). `pronto: false` → /em-breve.
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Início", icon: Home, pronto: true },
+  { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
   { href: "/servos", label: "Servos", icon: Users, pronto: true },
   { href: "/encontristas", label: "Encontristas", icon: UserCheck, pronto: true },
   { href: "/check-in", label: "Check-in", icon: CheckSquare, pronto: true },
@@ -54,7 +55,7 @@ const NAV: NavItem[] = [
 const NAV_SERVO: NavItem[] = [
   { href: "/dashboard", label: "Agenda", icon: Calendar, pronto: true },
   { href: "/perfil", label: "Perfil", icon: User, pronto: false },
-  { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: false },
+  { href: "/avisos", label: "Avisos", icon: Megaphone, pronto: true },
   { href: "/uniformes", label: "Uniforme", icon: Shirt, pronto: false },
   { href: "/ocorrencias", label: "Ocorrências", icon: AlertTriangle, pronto: false },
   { href: "/saude", label: "Saúde", icon: Stethoscope, pronto: false },

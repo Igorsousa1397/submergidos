@@ -113,7 +113,7 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
 
       {/* 4 cards de atalho/contagem */}
       <div className="grid grid-cols-2 gap-3">
-        <Link href="/em-breve?tela=Avisos" className={`${cardCls} p-4 transition active:scale-[0.98]`}>
+        <Link href="/avisos" className={`${cardCls} p-4 transition active:scale-[0.98]`}>
           <Megaphone size={18} className="text-corrente" />
           <p className="mt-2 text-xs uppercase tracking-wide text-corrente">Avisos</p>
         </Link>
