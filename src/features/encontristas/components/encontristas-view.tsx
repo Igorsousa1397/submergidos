@@ -72,10 +72,16 @@ const waLink = (raw: string) => {
 const APP_URL = "https://submergidos.vercel.app";
 
 // link do WhatsApp com mensagem pronta conforme o status:
-// pendente -> confirma se vai ao encontro; pago -> manda o QR Code de acesso.
+// pendente -> confirma se vai ao encontro; pagar depois -> lembra do prazo
+// combinado; pago -> manda o QR Code de acesso.
 // Sem emojis: alguns clientes de WhatsApp (ex.: Web sem fonte de emoji)
 // renderizam como losango. Negrito com *asterisco* funciona em todos.
-const contatoHref = (e: { nome: string; whatsapp: string | null; status: Status }) => {
+const contatoHref = (e: {
+  nome: string;
+  whatsapp: string | null;
+  status: Status;
+  pagar_depois_data?: string | null;
+}) => {
   const base = waLink(e.whatsapp ?? "");
   const primeiro = e.nome.trim().split(/\s+/)[0];
   const link = `${APP_URL}/pagamento?doc=${e.whatsapp ?? ""}`;
@@ -91,6 +97,17 @@ const contatoHref = (e: { nome: string; whatsapp: string | null; status: Status 
       `*1) SIM, eu vou* — garanta a sua vaga por aqui:\n${link}\n\n` +
       `*2) Não vou desta vez* — é só responder esta mensagem que a gente atualiza o seu cadastro e libera a vaga para outra pessoa.\n\n` +
       `Vai ser um final de semana *extraordinário*, e a gente quer muito você com a gente pra mergulhar no próximo nível!`;
+  } else if (e.status === "pagar_depois") {
+    // lembra do acordo, citando a data combinada quando houver
+    const prazo = e.pagar_depois_data
+      ? `até *${fmtNasc(e.pagar_depois_data)}*`
+      : "nos próximos dias";
+    msg =
+      `Olá, ${primeiro}!\n\n` +
+      `Passando para lembrar do nosso combinado sobre a sua inscrição no *Submergidos*: ficou de acertar o pagamento ${prazo}.\n\n` +
+      `A sua vaga está reservada até lá — assim que o pagamento entrar, ela fica confirmada de vez.\n\n` +
+      `Você pode pagar por aqui:\n${link}\n\n` +
+      `Se alguma coisa mudou e você não puder ir, é só responder esta mensagem que a gente ajusta o seu cadastro.`;
   } else if (e.status === "pago") {
     msg =
       `Olá, ${primeiro}!\n\n` +
