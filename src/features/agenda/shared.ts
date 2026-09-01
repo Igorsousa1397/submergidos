@@ -12,6 +12,18 @@ export const DIA_LABEL: Record<string, string> = {
   domingo: "Domingo",
 };
 
+// Uma cor por DIA (antes era uma paleta cíclica por posição, o que fazia
+// itens do mesmo dia terem cores diferentes e itens de dias diferentes
+// repetirem a cor). Agora a barra lateral identifica o dia de bate-pronto.
+export const DIA_COR: Record<string, string> = {
+  quinta: "#0a84ff",  // azul
+  sexta: "#ff9f0a",   // laranja
+  sabado: "#30d158",  // verde
+  domingo: "#e5564e", // vermelho
+};
+
+export const corDoDia = (dia: string | null) => DIA_COR[dia ?? ""] ?? "#4ea8d8";
+
 export interface AgendaRow {
   id: string;
   dia: string | null;

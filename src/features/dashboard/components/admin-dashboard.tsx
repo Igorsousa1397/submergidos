@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { DashboardData } from "../queries";
 import type { AgendaRow } from "@/features/agenda/shared";
-import { DIA_LABEL } from "@/features/agenda/shared";
+import { DIA_LABEL, corDoDia } from "@/features/agenda/shared";
 import type { AvisoRow } from "@/features/avisos/queries";
 import type { MinistracaoRow } from "@/features/ministracoes/shared";
 import { MinistracoesLista } from "@/features/ministracoes/components/ministracoes-lista";
@@ -282,13 +282,12 @@ export function AdminDashboard({
             </p>
           ) : (
             <>
-              {agenda.map((item, i) => {
-                const CORES = [AZUL, "#ff9f0a", "#bf5af2", OK, "#ff2d92", "#64b5f6"];
+              {agenda.map((item) => {
                 return (
                   <div
                     key={item.id}
                     className={cardCls}
-                    style={{ borderLeft: `3px solid ${CORES[i % CORES.length]}` }}
+                    style={{ borderLeft: `3px solid ${corDoDia(item.dia)}` }}
                   >
                     <div className="p-4">
                       <p className="font-semibold text-luz">{item.titulo}</p>

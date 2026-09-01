@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, CalendarDays } from "lucide-react";
 import { BottomSheet } from "@/components/bottom-sheet";
 import { criarItemAgenda, atualizarItemAgenda, removerItemAgenda } from "../actions";
-import { DIAS_AGENDA, DIA_LABEL, type AgendaRow } from "../shared";
+import { DIAS_AGENDA, DIA_LABEL, corDoDia, type AgendaRow } from "../shared";
 
 const OK = "#12b5a6";
 const cardCls = "rounded-card border border-[rgba(164,214,232,0.12)] bg-[rgba(0,14,33,0.5)]";
@@ -13,7 +13,6 @@ const inputCls =
   "w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-2.5 text-sm text-luz outline-none placeholder:text-corrente focus:border-raso";
 
 // mesmas cores cíclicas usadas na home do servo
-const CORES = ["#0a84ff", "#ff9f0a", "#bf5af2", "#12b5a6", "#ff2d92", "#64b5f6"];
 
 const fmtHora = (hora: string | null) => (hora ? hora.slice(0, 5) : null);
 
@@ -148,11 +147,11 @@ export function AgendaView({ itens, admin }: { itens: AgendaRow[]; admin: boolea
             )}
           </div>
         ) : (
-          porDia.map((item, i) => (
+          porDia.map((item) => (
             <div
               key={item.id}
               className={cardCls}
-              style={{ borderLeft: `3px solid ${CORES[i % CORES.length]}` }}
+              style={{ borderLeft: `3px solid ${corDoDia(item.dia)}` }}
             >
               <div className="flex items-start justify-between gap-2 p-4">
                 <div className="min-w-0">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Megaphone, AlertTriangle, BedDouble, ChevronDown, ChevronUp } from "lucide-react";
 import type { EscalaItem, ServoHomeData } from "../queries";
+import { corDoDia, DIA_LABEL } from "@/features/agenda/shared";
 import {
   DIAS_ESCALA,
   DIA_ESCALA_LABEL,
@@ -14,9 +15,6 @@ import { MinistracoesLista } from "@/features/ministracoes/components/ministraco
 type Aba = "agenda" | "escalas" | "ministracoes";
 
 const cardCls = "rounded-card border border-[rgba(164,214,232,0.12)] bg-[rgba(0,14,33,0.5)]";
-
-// cores das barras laterais da agenda (cíclicas, como no original)
-const CORES_AGENDA = ["#0a84ff", "#ff9f0a", "#bf5af2", "#12b5a6", "#ff2d92", "#64b5f6"];
 
 export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData }) {
   const [aba, setAba] = useState<Aba>("agenda");
@@ -81,25 +79,29 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
               A agenda do encontro ainda não foi publicada.
             </p>
           ) : (
-            dados.agenda.map((item, i) => (
+            dados.agenda.map((item, i) => {
+              const cor = corDoDia(item.dia);
+              return (
               <div
                 key={item.id}
                 className={cardCls}
                 style={
+                  // a primeira é a "próxima": mesma cor do dia, mas com
+                  // borda inteira e fundo tingido pra saltar na lista
                   i === 0
-                    ? { border: "1px solid rgba(10,132,255,0.45)", background: "rgba(10,132,255,0.08)" }
-                    : { borderLeft: `3px solid ${CORES_AGENDA[i % CORES_AGENDA.length]}` }
+                    ? { border: `1px solid ${cor}73`, background: `${cor}14` }
+                    : { borderLeft: `3px solid ${cor}` }
                 }
               >
                 <div className="p-4">
                   {i === 0 && (
-                    <p className="mb-1 text-[11px] font-bold uppercase tracking-widest" style={{ color: "#4ea8d8" }}>
+                    <p className="mb-1 text-[11px] font-bold uppercase tracking-widest" style={{ color: cor }}>
                       Próxima
                     </p>
                   )}
                   <p className="font-semibold text-luz">{item.titulo}</p>
-                  <p className="text-xs capitalize text-corrente">
-                    {item.dia ?? ""}
+                  <p className="text-xs text-corrente">
+                    {DIA_LABEL[item.dia ?? ""] ?? item.dia ?? ""}
                     {item.hora ? ` · ${item.hora.slice(0, 5)}` : ""}
                     {item.ministrante ? ` · ${item.ministrante}` : ""}
                   </p>
@@ -110,7 +112,8 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
                   )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
