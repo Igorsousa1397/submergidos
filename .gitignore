@@ -6,3 +6,4 @@ node_modules/
 .vercel
 supabase/.temp/
 *.tsbuildinfo
+.DS_Store
