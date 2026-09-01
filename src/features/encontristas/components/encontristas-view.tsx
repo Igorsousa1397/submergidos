@@ -72,7 +72,7 @@ const waLink = (raw: string) => {
 const APP_URL = "https://submergidos.vercel.app";
 
 // link do WhatsApp com mensagem pronta conforme o status:
-// pendente -> cobra o pagamento; pago -> manda o link do QR Code de acesso.
+// pendente -> confirma se vai ao encontro; pago -> manda o QR Code de acesso.
 const contatoHref = (e: { nome: string; whatsapp: string | null; status: Status }) => {
   const base = waLink(e.whatsapp ?? "");
   const primeiro = e.nome.trim().split(/\s+/)[0];
@@ -80,11 +80,15 @@ const contatoHref = (e: { nome: string; whatsapp: string | null; status: Status 
 
   let msg = "";
   if (e.status === "pendente") {
+    // confirma a intenção ANTES de cobrar: a liderança precisa saber quem
+    // realmente vai para liberar a vaga de quem desistiu
     msg =
       `Olá, ${primeiro}! 🌊\n\n` +
-      `Recebemos a sua inscrição no *Submergidos*! Só que ela ainda está *pendente* — a vaga só é confirmada depois do pagamento.\n\n` +
-      `Vai ser um final de semana *extraordinário*, e a gente quer muito você com a gente pra mergulhar no próximo nível.\n\n` +
-      `Garanta a sua vaga por aqui: ${link}`;
+      `Recebemos a sua inscrição no *Submergidos*, mas ela ainda está *pendente* — a vaga só é confirmada com o pagamento.\n\n` +
+      `Antes de qualquer coisa, queremos confirmar com você: *você vai ao encontro?*\n\n` +
+      `✅ *SIM, eu vou* — garanta a sua vaga por aqui: ${link}\n` +
+      `❌ *Não vou desta vez* — é só responder esta mensagem que a gente atualiza o seu cadastro e libera a vaga para outra pessoa.\n\n` +
+      `Vai ser um final de semana *extraordinário*, e a gente quer muito você com a gente pra mergulhar no próximo nível. 🙌`;
   } else if (e.status === "pago") {
     msg =
       `Olá, ${primeiro}! 🌊\n\n` +
