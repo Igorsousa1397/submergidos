@@ -52,10 +52,10 @@ export function AdminDashboard({
   const maxCel = Math.max(1, ...d.porCelula.map((x) => x.qtd));
 
   const topo = [
-    { label: "Check-in", valor: `${d.checkinFeitos}/${d.checkinTotal}` },
-    { label: "Ônibus", valor: `${d.onibusOcupados}/${d.onibusTotal}` },
-    { label: "Quartos", valor: `${d.quartos}` },
-    { label: "Ocorrências", valor: `${d.ocorrencias}` },
+    { label: "Check-in", valor: `${d.checkinFeitos}/${d.checkinTotal}`, href: "/check-in" },
+    { label: "Ônibus", valor: `${d.onibusOcupados}/${d.onibusTotal}`, href: "/onibus" },
+    { label: "Quartos", valor: `${d.quartos}`, href: "/quartos" },
+    { label: "Ocorrências", valor: `${d.ocorrencias}`, href: "/ocorrencias" },
   ];
 
   return (
@@ -66,13 +66,17 @@ export function AdminDashboard({
         </h1>
       </header>
 
-      {/* 4 cards de topo */}
+      {/* 4 cards de topo — cada um leva à tela correspondente */}
       <div className="grid grid-cols-2 gap-3">
         {topo.map((c) => (
-          <div key={c.label} className={`${cardCls} p-4`}>
+          <Link
+            key={c.label}
+            href={c.href}
+            className={`${cardCls} p-4 transition hover:border-[rgba(164,214,232,0.3)] active:scale-[0.98]`}
+          >
             <p className="font-display text-2xl font-extrabold text-luz">{c.valor}</p>
             <p className="mt-1 text-xs uppercase tracking-wide text-corrente">{c.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
 
