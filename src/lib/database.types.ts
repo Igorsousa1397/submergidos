@@ -388,6 +388,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ministracoes: {
+        Row: {
+          ato: string | null
+          base: string | null
+          citacao: string | null
+          created_at: string | null
+          direcao: string | null
+          id: string
+          ministrante: string | null
+          ordem: number
+          quando: string | null
+          tema: string | null
+          texto: string | null
+          titulo: string
+        }
+        Insert: {
+          ato?: string | null
+          base?: string | null
+          citacao?: string | null
+          created_at?: string | null
+          direcao?: string | null
+          id?: string
+          ministrante?: string | null
+          ordem?: number
+          quando?: string | null
+          tema?: string | null
+          texto?: string | null
+          titulo: string
+        }
+        Update: {
+          ato?: string | null
+          base?: string | null
+          citacao?: string | null
+          created_at?: string | null
+          direcao?: string | null
+          id?: string
+          ministrante?: string | null
+          ordem?: number
+          quando?: string | null
+          tema?: string | null
+          texto?: string | null
+          titulo?: string
+        }
+        Relationships: []
+      }
       ocorrencias: {
         Row: {
           created_at: string | null
@@ -491,8 +536,8 @@ export type Database = {
       }
       profiles: {
         Row: {
-          ativo: boolean
           aprovado: boolean
+          ativo: boolean
           celula: string | null
           cpf: string | null
           created_at: string | null
@@ -512,8 +557,8 @@ export type Database = {
           telas_extra: string[]
         }
         Insert: {
-          ativo?: boolean
           aprovado?: boolean
+          ativo?: boolean
           celula?: string | null
           cpf?: string | null
           created_at?: string | null
@@ -528,13 +573,13 @@ export type Database = {
           pago?: boolean
           pago_em?: string | null
           primeiro?: boolean
-          telas_extra?: string[]
           role?: string
           sexo?: Database["public"]["Enums"]["sexo"] | null
+          telas_extra?: string[]
         }
         Update: {
-          ativo?: boolean
           aprovado?: boolean
+          ativo?: boolean
           celula?: string | null
           cpf?: string | null
           created_at?: string | null
@@ -549,9 +594,9 @@ export type Database = {
           pago?: boolean
           pago_em?: string | null
           primeiro?: boolean
-          telas_extra?: string[]
           role?: string
           sexo?: Database["public"]["Enums"]["sexo"] | null
+          telas_extra?: string[]
         }
         Relationships: [
           {
@@ -785,6 +830,7 @@ export type Database = {
       buscar_inscricao: {
         Args: { documento: string }
         Returns: {
+          acordo_valor: number
           celula: string
           id: string
           igreja: string
@@ -797,6 +843,7 @@ export type Database = {
       inscricoes_abertas: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       pode_avisos: { Args: never; Returns: boolean }
+      pode_saude: { Args: never; Returns: boolean }
     }
     Enums: {
       aviso_publico: "todos" | "homens" | "mulheres"

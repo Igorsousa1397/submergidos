@@ -73,15 +73,18 @@ function fileParaDataURL(file: File): Promise<string | null> {
 //   - RG: removido (decisão do Igor)
 // ============================================================
 
+// Opcionais de propósito: a RPC pública buscar_inscricao devolve só
+// id/nome/igreja/celula/status — CPF fica de fora por privacidade e os
+// demais campos só existem quando o registro vem da área logada.
 export type EncontristaTermo = {
   id: string;
   nome: string;
-  cpf: string | null;
   igreja: string | null;
   celula: string | null;
   status: string | null;
-  autoriza_imagem: string | null;
-  termo_assinado_at: string | null;
+  cpf?: string | null;
+  autoriza_imagem?: string | null;
+  termo_assinado_at?: string | null;
 };
 
 export type BuscaTermo =

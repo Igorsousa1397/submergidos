@@ -9,6 +9,7 @@ import {
   DIA_ESCALA_LABEL,
   DIA_ESCALA_COR,
 } from "@/features/backoffice/shared";
+import { MinistracoesLista } from "@/features/ministracoes/components/ministracoes-lista";
 
 type Aba = "agenda" | "escalas" | "ministracoes";
 
@@ -131,12 +132,8 @@ export function ServoHome({ nome, dados }: { nome: string; dados: ServoHomeData 
         </div>
       )}
 
-      {/* MINISTRAÇÕES — conteúdo do Submergidos ainda não definido */}
-      {aba === "ministracoes" && (
-        <p className="py-8 text-center text-sm text-corrente">
-          As ministrações ainda não foram publicadas.
-        </p>
-      )}
+      {/* MINISTRAÇÕES — cronograma enviado pela pastora */}
+      {aba === "ministracoes" && <MinistracoesLista itens={dados.ministracoes} />}
     </div>
   );
 }

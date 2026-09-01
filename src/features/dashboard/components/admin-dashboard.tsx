@@ -6,6 +6,8 @@ import type { DashboardData } from "../queries";
 import type { AgendaRow } from "@/features/agenda/shared";
 import { DIA_LABEL } from "@/features/agenda/shared";
 import type { AvisoRow } from "@/features/avisos/queries";
+import type { MinistracaoRow } from "@/features/ministracoes/shared";
+import { MinistracoesLista } from "@/features/ministracoes/components/ministracoes-lista";
 
 const OK = "#12b5a6";
 const ALERTA = "#e5564e";
@@ -19,18 +21,20 @@ const cardCls = "rounded-card border border-[rgba(164,214,232,0.12)] bg-[rgba(0,
 const brl = (v: number) =>
   `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-type Aba = "dashboard" | "agenda" | "avisos";
+type Aba = "dashboard" | "agenda" | "ministracoes" | "avisos";
 type Periodo = 7 | 14 | 30;
 
 export function AdminDashboard({
   nome,
   d,
   agenda,
+  ministracoes,
   avisos,
 }: {
   nome: string;
   d: DashboardData;
   agenda: AgendaRow[];
+  ministracoes: MinistracaoRow[];
   avisos: AvisoRow[];
 }) {
   const [aba, setAba] = useState<Aba>("dashboard");
@@ -85,12 +89,13 @@ export function AdminDashboard({
         {([
           ["dashboard", "Dashboard"],
           ["agenda", "Agenda"],
+          ["ministracoes", "Ministrações"],
           ["avisos", "Avisos"],
         ] as [Aba, string][]).map(([val, label]) => (
           <button
             key={val}
             onClick={() => setAba(val)}
-            className={`flex-1 rounded-control py-2 text-sm font-semibold transition ${
+            className={`flex-1 rounded-control py-2 text-xs font-semibold transition ${
               aba === val
                 ? "font-bold"
                 : "border border-[rgba(164,214,232,0.18)] text-corrente hover:text-luz"
@@ -306,6 +311,9 @@ export function AdminDashboard({
           )}
         </div>
       )}
+
+      {/* ============ ABA MINISTRAÇÕES ============ */}
+      {aba === "ministracoes" && <MinistracoesLista itens={ministracoes} />}
 
       {/* ============ ABA AVISOS ============ */}
       {aba === "avisos" && (

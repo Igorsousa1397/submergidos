@@ -6,6 +6,7 @@ import { getServoHome } from "@/features/servo-home/queries";
 import { ServoHome } from "@/features/servo-home/components/servo-home";
 import { getAgenda } from "@/features/agenda/queries";
 import { getAvisosData } from "@/features/avisos/queries";
+import { getMinistracoes } from "@/features/ministracoes/queries";
 import { isGestao } from "@/lib/permissions";
 
 export default async function DashboardPage() {
@@ -30,13 +31,20 @@ export default async function DashboardPage() {
     return <ServoHome nome={primeiroNome} dados={dados} />;
   }
 
-  const [d, agenda, avisosData] = await Promise.all([
+  const [d, agenda, ministracoes, avisosData] = await Promise.all([
     getDashboard(),
     getAgenda(),
+    getMinistracoes(),
     getAvisosData(),
   ]);
 
   return (
-    <AdminDashboard nome={primeiroNome} d={d} agenda={agenda} avisos={avisosData.avisos} />
+    <AdminDashboard
+      nome={primeiroNome}
+      d={d}
+      agenda={agenda}
+      ministracoes={ministracoes}
+      avisos={avisosData.avisos}
+    />
   );
 }
