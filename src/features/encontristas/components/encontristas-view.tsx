@@ -73,6 +73,8 @@ const APP_URL = "https://submergidos.vercel.app";
 
 // link do WhatsApp com mensagem pronta conforme o status:
 // pendente -> confirma se vai ao encontro; pago -> manda o QR Code de acesso.
+// Sem emojis: alguns clientes de WhatsApp (ex.: Web sem fonte de emoji)
+// renderizam como losango. Negrito com *asterisco* funciona em todos.
 const contatoHref = (e: { nome: string; whatsapp: string | null; status: Status }) => {
   const base = waLink(e.whatsapp ?? "");
   const primeiro = e.nome.trim().split(/\s+/)[0];
@@ -83,16 +85,16 @@ const contatoHref = (e: { nome: string; whatsapp: string | null; status: Status 
     // confirma a intenção ANTES de cobrar: a liderança precisa saber quem
     // realmente vai para liberar a vaga de quem desistiu
     msg =
-      `Olá, ${primeiro}! 🌊\n\n` +
+      `Olá, ${primeiro}!\n\n` +
       `Recebemos a sua inscrição no *Submergidos*, mas ela ainda está *pendente* — a vaga só é confirmada com o pagamento.\n\n` +
       `Antes de qualquer coisa, queremos confirmar com você: *você vai ao encontro?*\n\n` +
-      `✅ *SIM, eu vou* — garanta a sua vaga por aqui: ${link}\n` +
-      `❌ *Não vou desta vez* — é só responder esta mensagem que a gente atualiza o seu cadastro e libera a vaga para outra pessoa.\n\n` +
-      `Vai ser um final de semana *extraordinário*, e a gente quer muito você com a gente pra mergulhar no próximo nível. 🙌`;
+      `*1) SIM, eu vou* — garanta a sua vaga por aqui:\n${link}\n\n` +
+      `*2) Não vou desta vez* — é só responder esta mensagem que a gente atualiza o seu cadastro e libera a vaga para outra pessoa.\n\n` +
+      `Vai ser um final de semana *extraordinário*, e a gente quer muito você com a gente pra mergulhar no próximo nível!`;
   } else if (e.status === "pago") {
     msg =
-      `Olá, ${primeiro}! 🌊\n\n` +
-      `Boa notícia: o seu pagamento foi confirmado e a sua vaga no *Submergidos* está garantida! 🙌\n\n` +
+      `Olá, ${primeiro}!\n\n` +
+      `Boa notícia: o seu pagamento foi confirmado e a sua vaga no *Submergidos* está garantida!\n\n` +
       `Vai ser um final de semana *extraordinário*. Acesse aqui o seu *QR Code* de acesso ao encontro: ${link}`;
   }
 
