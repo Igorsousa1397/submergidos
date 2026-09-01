@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { STATUS_CONFIRMADOS_CHECKIN } from "@/lib/constants";
 
 // ============================================================
 //  Dados do Dashboard — Server-only.
@@ -70,7 +71,12 @@ export async function getDashboard(): Promise<DashboardData> {
   // ---- contadores de topo + dados brutos p/ agregações ----
   const [checkin, quartos, ocorrencias, onibusList, passageiros, servos, roles, encs] =
     await Promise.all([
-      supabase.from("encontristas").select("id", { count: "exact", head: true }).eq("chegou", true),
+      // check-in só vale para quem tem pagamento confirmado (mesma regra da tela)
+      supabase
+        .from("encontristas")
+        .select("id", { count: "exact", head: true })
+        .eq("chegou", true)
+        .in("status", STATUS_CONFIRMADOS_CHECKIN),
       supabase.from("quartos").select("id", { count: "exact", head: true }),
       // como no original: o contador é de ocorrências NÃO resolvidas
       supabase
@@ -89,6 +95,10 @@ export async function getDashboard(): Promise<DashboardData> {
     ]);
 
   const checkinFeitos = checkin.count ?? 0;
+  // denominador do card: quem pode fazer check-in (pago ou pagar depois)
+  const checkinTotal = (encs.data ?? []).filter((e) =>
+    (STATUS_CONFIRMADOS_CHECKIN as string[]).includes(e.status),
+  ).length;
   const onibusTotal = (onibusList.data ?? []).reduce((s, o) => s + (o.capacidade ?? 0), 0);
 
   // financeiro encontristas
@@ -170,7 +180,7 @@ export async function getDashboard(): Promise<DashboardData> {
 
   return {
     checkinFeitos,
-    checkinTotal: total,
+    checkinTotal,
     onibusOcupados: passageiros.count ?? 0,
     onibusTotal,
     quartos: quartos.count ?? 0,
