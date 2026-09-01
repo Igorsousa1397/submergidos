@@ -28,12 +28,22 @@ const ordemDia = (dia: string | null) => {
   return i === -1 ? 99 : i;
 };
 
+// A madrugada pertence à noite anterior: o jantar de 00h30 vem DEPOIS da
+// ministração das 23h de sexta, não antes da chegada das 19h30. Horas antes
+// das 05:00 somam 24h só na ordenação (o valor exibido continua o mesmo).
+const ordemHora = (hora: string | null) => {
+  if (!hora) return 99999; // sem hora vai pro fim do dia
+  const [h, m] = hora.split(":").map(Number);
+  const min = h * 60 + m;
+  return min < 5 * 60 ? min + 24 * 60 : min;
+};
+
 // Ordena a programação: dia do encontro (quinta→domingo), depois hora.
 export function ordenarAgenda(itens: AgendaRow[]): AgendaRow[] {
   return [...itens].sort(
     (a, b) =>
       ordemDia(a.dia) - ordemDia(b.dia) ||
-      (a.hora ?? "99").localeCompare(b.hora ?? "99") ||
+      ordemHora(a.hora) - ordemHora(b.hora) ||
       (a.ordem ?? 0) - (b.ordem ?? 0),
   );
 }
