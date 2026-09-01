@@ -125,6 +125,9 @@ export function AdminDashboard({
               {d.pagarDepois > 0 && (
                 <LinhaBarra label="Pagar dep." cor={LARANJA} qtd={d.pagarDepois} base={d.meta} />
               )}
+              {d.desistencias > 0 && (
+                <LinhaBarra label="Desistência" cor={CINZA} qtd={d.desistencias} base={d.meta} />
+              )}
             </div>
 
             <div className="space-y-2 border-t border-[rgba(164,214,232,0.1)] pt-3">

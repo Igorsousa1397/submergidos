@@ -108,6 +108,7 @@ export function EncontristasView({
 }) {
   const [aba, setAba] = useState<"todos" | "feminino" | "masculino">("todos");
   const [celulaId, setCelulaId] = useState<string>("");
+  const [filtroStatus, setFiltroStatus] = useState<Status | "">("");
   const [busca, setBusca] = useState("");
   const [expandido, setExpandido] = useState<string | null>(null);
   const [bloqueadas, setBloqueadas] = useState(inscricoesBloqueadas);
@@ -151,10 +152,11 @@ export function EncontristasView({
     return rows.filter((e) => {
       if (aba !== "todos" && e.sexo !== aba) return false;
       if (celulaId && e.celula !== celulaId) return false;
+      if (filtroStatus && e.status !== filtroStatus) return false;
       if (q && !e.nome.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [rows, aba, celulaId, busca]);
+  }, [rows, aba, celulaId, filtroStatus, busca]);
 
   const mudarStatus = (id: string, status: Status) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
@@ -296,19 +298,34 @@ export function EncontristasView({
         ))}
       </div>
 
-      {/* filtro de célula */}
-      <select
-        value={celulaId}
-        onChange={(e) => setCelulaId(e.target.value)}
-        className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none focus:border-raso"
-      >
-        <option value="">Todas as células</option>
-        {celulasPresentes.map((nome) => (
-          <option key={nome} value={nome}>
-            {nome}
-          </option>
-        ))}
-      </select>
+      {/* filtros de célula e status */}
+      <div className="grid grid-cols-2 gap-2">
+        <select
+          value={celulaId}
+          onChange={(e) => setCelulaId(e.target.value)}
+          className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none focus:border-raso"
+        >
+          <option value="">Todas as células</option>
+          {celulasPresentes.map((nome) => (
+            <option key={nome} value={nome}>
+              {nome}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value as Status | "")}
+          className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none focus:border-raso"
+          style={filtroStatus ? { color: STATUS_COR[filtroStatus] } : undefined}
+        >
+          <option value="">Todos os status</option>
+          {(Object.keys(STATUS_LABEL) as Status[]).map((st) => (
+            <option key={st} value={st}>
+              {STATUS_LABEL[st]}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* exportar */}
       <button
