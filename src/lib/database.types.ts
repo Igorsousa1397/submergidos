@@ -390,6 +390,7 @@ export type Database = {
       }
       ministracoes: {
         Row: {
+          agenda_id: string | null
           ato: string | null
           base: string | null
           citacao: string | null
@@ -404,6 +405,7 @@ export type Database = {
           titulo: string
         }
         Insert: {
+          agenda_id?: string | null
           ato?: string | null
           base?: string | null
           citacao?: string | null
@@ -418,6 +420,7 @@ export type Database = {
           titulo: string
         }
         Update: {
+          agenda_id?: string | null
           ato?: string | null
           base?: string | null
           citacao?: string | null
@@ -431,7 +434,15 @@ export type Database = {
           texto?: string | null
           titulo?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ministracoes_agenda_id_fkey"
+            columns: ["agenda_id"]
+            isOneToOne: false
+            referencedRelation: "agenda"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ocorrencias: {
         Row: {

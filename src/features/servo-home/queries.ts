@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ordenarAgenda } from "@/features/agenda/shared";
 import { LIDER_MAP_DEFAULT } from "@/features/backoffice/shared";
 import type { MinistracaoRow } from "@/features/ministracoes/shared";
+import { getMinistracoes } from "@/features/ministracoes/queries";
 
 export interface AgendaItem {
   id: string;
@@ -87,11 +88,9 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
         .select("quartos(numero, is_maes)")
         .eq("servo_id", userId)
         .maybeSingle(),
-      // cronograma das ministrações (aba "Ministrações")
-      supabase
-        .from("ministracoes")
-        .select("id, ordem, titulo, quando, ministrante, texto, base, citacao, tema, ato, direcao")
-        .order("ordem", { ascending: true }),
+      // cronograma das ministrações (aba "Ministrações") — horário e
+      // ministrante já resolvidos a partir da agenda
+      getMinistracoes(),
     ]);
 
   // ---- escalas do servo, com líderes e equipe (como no original) ----
@@ -169,7 +168,7 @@ export async function getServoHome(userId: string): Promise<ServoHomeData> {
     // ordena quinta→domingo, depois por hora (mesma regra da tela de Agenda)
     agenda: ordenarAgenda(agendaRes.data ?? []),
     escalas,
-    ministracoes: ministracoesRes.data ?? [],
+    ministracoes: ministracoesRes,
     banners,
   };
 }
