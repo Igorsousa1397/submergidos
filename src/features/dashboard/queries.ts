@@ -39,15 +39,20 @@ export type DashboardData = {
   itajai: number; // encontristas da Fonte Itajaí (pagam R$ 200)
   // financeiro encontristas
   arrecadado: number;
-  aReceber: number;
+  aReceber: number; // total a receber (pendentes + pagar depois)
+  aReceberPendente: number;
+  aReceberPagarDepois: number;
   previsaoTotal: number;
   // servos
   servosTotal: number;
   servosPagos: number;
   servosPendentes: number;
+  servosPagarDepois: number;
   servosAbonados: number;
   servosArrecadado: number;
-  servosAReceber: number;
+  servosAReceber: number; // total a receber (pendentes + pagar depois)
+  servosAReceberPendente: number;
+  servosAReceberPagarDepois: number;
   // gráficos
   cadastrosPorDia: DiaCount[];
   porCelula: CelulaCount[];
@@ -104,16 +109,22 @@ export async function getDashboard(): Promise<DashboardData> {
   // financeiro encontristas
   // Considera acordos: quem tem acordo_valor conta com esse valor no lugar do padrão.
   // Itajaí paga R$ 200 (regra do original).
+  // "a receber" fica separado por status: pendente é cobrança em aberto,
+  // pagar depois é prazo já combinado com a liderança — a liderança precisa
+  // distinguir os dois para saber o que cobrar hoje.
   let arrecadado = 0;
-  let aReceber = 0;
+  let aReceberPendente = 0;
+  let aReceberPagarDepois = 0;
   let itajai = 0;
   for (const e of encs.data ?? []) {
     const ehItajai = e.igreja === "Fonte Itajaí";
     if (ehItajai && e.status !== "desistiu") itajai += 1;
     const valor = e.acordo_valor ?? (ehItajai ? 200 : VALOR_PADRAO);
     if (e.status === "pago") arrecadado += valor;
-    else if (e.status === "pendente" || e.status === "pagar_depois") aReceber += valor;
+    else if (e.status === "pendente") aReceberPendente += valor;
+    else if (e.status === "pagar_depois") aReceberPagarDepois += valor;
   }
+  const aReceber = aReceberPendente + aReceberPagarDepois;
   // previsão da meta: Itajaí entra com R$ 200 (nota exibida no card)
   const previsaoTotal =
     Math.max(0, META_ENCONTRISTAS - itajai) * VALOR_PADRAO + itajai * 200;
@@ -130,9 +141,11 @@ export async function getDashboard(): Promise<DashboardData> {
 
   let servosPagos = 0;
   let servosPendentes = 0;
+  let servosPagarDepois = 0;
   let servosAbonados = 0;
   let servosArrecadado = 0;
-  let servosAReceber = 0;
+  let servosAReceberPendente = 0;
+  let servosAReceberPagarDepois = 0;
 
   for (const s of servosAtivos) {
     // abonado por perfil (isento) OU abonado manualmente — fora do financeiro
@@ -145,12 +158,15 @@ export async function getDashboard(): Promise<DashboardData> {
     if (s.pagamento === "pago") {
       servosPagos += 1;
       servosArrecadado += valor;
+    } else if (s.pagamento === "pagar_depois") {
+      servosPagarDepois += 1;
+      servosAReceberPagarDepois += valor;
     } else {
-      // pendente e pagar_depois contam como "a receber"
       servosPendentes += 1;
-      servosAReceber += valor;
+      servosAReceberPendente += valor;
     }
   }
+  const servosAReceber = servosAReceberPendente + servosAReceberPagarDepois;
 
   // ---- cadastros por dia (encontristas.created_at) ----
   // chaveado pelo ISO (permite filtrar 7d/14d/30d e ordenar de verdade)
@@ -194,13 +210,18 @@ export async function getDashboard(): Promise<DashboardData> {
     itajai,
     arrecadado,
     aReceber,
+    aReceberPendente,
+    aReceberPagarDepois,
     previsaoTotal,
     servosTotal: servosAtivos.length,
     servosPagos,
     servosPendentes,
+    servosPagarDepois,
     servosAbonados,
     servosArrecadado,
     servosAReceber,
+    servosAReceberPendente,
+    servosAReceberPagarDepois,
     cadastrosPorDia,
     porCelula,
   };

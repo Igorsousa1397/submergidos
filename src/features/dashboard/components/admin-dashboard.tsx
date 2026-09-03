@@ -146,8 +146,16 @@ export function AdminDashboard({
                 <span className="font-bold" style={{ color: OK }}>{brl(d.arrecadado)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-luz">● A receber</span>
-                <span className="font-bold" style={{ color: LARANJA }}>{brl(d.aReceber)}</span>
+                <span className="text-luz">● A receber (pend.)</span>
+                <span className="font-bold" style={{ color: ALERTA }}>
+                  {brl(d.aReceberPendente)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-luz">● Pagar depois</span>
+                <span className="font-bold" style={{ color: LARANJA }}>
+                  {brl(d.aReceberPagarDepois)}
+                </span>
               </div>
               <div className="flex items-center justify-between border-t border-[rgba(164,214,232,0.1)] pt-2 text-sm">
                 <span className="text-corrente">Projeção de hoje</span>
@@ -179,6 +187,14 @@ export function AdminDashboard({
             <div className="space-y-2">
               <LinhaBarra label="Pagos" cor={OK} qtd={d.servosPagos} base={d.servosTotal} />
               <LinhaBarra label="Pend." cor={ALERTA} qtd={d.servosPendentes} base={d.servosTotal} />
+              {d.servosPagarDepois > 0 && (
+                <LinhaBarra
+                  label="Pagar dep."
+                  cor={LARANJA}
+                  qtd={d.servosPagarDepois}
+                  base={d.servosTotal}
+                />
+              )}
               <LinhaBarra label="Abonado" cor={CINZA} qtd={d.servosAbonados} base={d.servosTotal} />
             </div>
 
@@ -189,9 +205,19 @@ export function AdminDashboard({
                 <span className="font-bold" style={{ color: OK }}>{brl(d.servosArrecadado)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-luz">● A receber</span>
-                <span className="font-bold" style={{ color: LARANJA }}>{brl(d.servosAReceber)}</span>
+                <span className="text-luz">● A receber (pend.)</span>
+                <span className="font-bold" style={{ color: ALERTA }}>
+                  {brl(d.servosAReceberPendente)}
+                </span>
               </div>
+              {d.servosAReceberPagarDepois > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-luz">● Pagar depois</span>
+                  <span className="font-bold" style={{ color: LARANJA }}>
+                    {brl(d.servosAReceberPagarDepois)}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between border-t border-[rgba(164,214,232,0.1)] pt-2 text-sm">
                 <span className="text-corrente">Projeção total</span>
                 <span className="font-bold text-luz">
