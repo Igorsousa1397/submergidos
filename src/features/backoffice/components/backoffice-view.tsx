@@ -25,6 +25,7 @@ import {
   criarPerfil,
   alternarTelaPerfil,
   alternarTelaExtra,
+  definirPeriodoFuncao,
 } from "../actions";
 import {
   DIAS_ESCALA,
@@ -32,9 +33,12 @@ import {
   DIA_ESCALA_COR,
   TELAS,
   LIDER_MAP_DEFAULT,
+  TIPOS_PERIODO,
+  periodosDaFuncao,
 } from "../shared";
 import type { BackOfficeData, UsuarioBack, FuncaoBack, RoleBack } from "../queries";
 import { baixarPlanilha } from "@/lib/planilha";
+import { BottomSheet } from "@/components/bottom-sheet";
 
 const OK = "#12b5a6";
 const AZUL = "#0a84ff";
@@ -710,40 +714,41 @@ function AddFuncaoDia({
 
   const escolher = (f: FuncaoBack) => {
     setBusca("");
-    if (f.periodo === "almoco_jantar") setPendente(f);
+    if (periodosDaFuncao(f.periodo)) setPendente(f);
     else onAdd(f.id, null);
   };
 
-  if (pendente) {
-    return (
-      <div
-        className="flex flex-wrap items-center gap-2 rounded-control border p-2.5"
-        style={{ borderColor: `${cor}44`, background: `${cor}0d` }}
-      >
-        <p className="text-xs font-semibold text-luz">{pendente.nome} — qual período?</p>
-        {["Almoço", "Jantar"].map((p) => (
-          <button
-            key={p}
-            onClick={() => {
-              onAdd(pendente.id, p);
-              setPendente(null);
-            }}
-            disabled={pending}
-            className="rounded-control px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
-            style={{ background: cor }}
-          >
-            {p}
-          </button>
-        ))}
-        <button onClick={() => setPendente(null)} aria-label="Cancelar" className="text-corrente">
-          <X size={14} />
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="relative">
+      {/* período da função — modal, para não passar batido no meio da lista */}
+      <BottomSheet
+        titulo={pendente?.nome ?? ""}
+        aberto={pendente !== null}
+        onClose={() => setPendente(null)}
+      >
+        {pendente && (
+          <div className="space-y-2">
+            <p className="text-sm text-corrente">
+              Em qual período de <span className="text-luz">{DIA_ESCALA_LABEL[dia]}</span>?
+            </p>
+            {(periodosDaFuncao(pendente.periodo) ?? []).map((p) => (
+              <button
+                key={p}
+                onClick={() => {
+                  onAdd(pendente.id, p);
+                  setPendente(null);
+                }}
+                disabled={pending}
+                className="w-full rounded-control py-3 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-50"
+                style={{ background: cor }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+      </BottomSheet>
+
       <input
         placeholder={`+ Função na ${DIA_ESCALA_LABEL[dia]}...`}
         value={busca}
@@ -763,7 +768,7 @@ function AddFuncaoDia({
                 className="block w-full px-3 py-2 text-left text-sm text-luz transition hover:bg-white/5"
               >
                 {f.nome}
-                {f.periodo === "almoco_jantar" && (
+                {periodosDaFuncao(f.periodo) && (
                   <span className="ml-1 text-[10px] text-corrente">(pede período)</span>
                 )}
               </button>
@@ -793,7 +798,7 @@ function TabFuncoes({
   const [aberto, setAberto] = useState<string | null>(null);
   const [shNova, setShNova] = useState(false);
   const [nome, setNome] = useState("");
-  const [temPeriodo, setTemPeriodo] = useState(false);
+  const [tipoPeriodo, setTipoPeriodo] = useState<string | null>(null);
 
   // pessoas por função (nome + dia + sexo), derivado das escalas dos usuários
   const porFuncao = useMemo(() => {
@@ -822,25 +827,19 @@ function TabFuncoes({
             onChange={(e) => setNome(e.target.value)}
             className={inputCls}
           />
-          <button
-            onClick={() => setTemPeriodo((v) => !v)}
-            className="flex w-full items-center justify-between rounded-control border px-3 py-2.5 text-sm font-semibold transition"
-            style={
-              temPeriodo
-                ? { borderColor: `${AZUL}66`, color: AZUL, background: `${AZUL}10` }
-                : { borderColor: "rgba(164,214,232,0.18)", color: "#416a87" }
-            }
-          >
-            Pede período (Almoço/Jantar)
-            <span>{temPeriodo ? "Sim" : "Não"}</span>
-          </button>
+          <div>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-corrente">
+              Pede período?
+            </p>
+            <SeletorTipoPeriodo valor={tipoPeriodo} onChange={setTipoPeriodo} />
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => {
                 if (!nome.trim()) return;
-                rodar(() => criarFuncao(nome, temPeriodo));
+                rodar(() => criarFuncao(nome, tipoPeriodo));
                 setNome("");
-                setTemPeriodo(false);
+                setTipoPeriodo(null);
                 setShNova(false);
               }}
               disabled={pending || !nome.trim()}
@@ -888,8 +887,10 @@ function TabFuncoes({
             >
               <p className="min-w-0 flex-1 truncate font-semibold text-luz">
                 {f.nome}
-                {f.periodo === "almoco_jantar" && (
-                  <span className="ml-1.5 text-[10px] font-normal text-corrente">Almoço/Jantar</span>
+                {f.periodo && TIPOS_PERIODO[f.periodo] && (
+                  <span className="ml-1.5 text-[10px] font-normal text-corrente">
+                    {TIPOS_PERIODO[f.periodo].label}
+                  </span>
                 )}
               </p>
               <span className="flex shrink-0 items-center gap-2">
@@ -920,6 +921,29 @@ function TabFuncoes({
                   aplicar={aplicar}
                   pending={pending}
                 />
+
+                <div>
+                  <p className="mb-2 text-[11px] uppercase tracking-wide text-corrente">
+                    Pede período?
+                  </p>
+                  <SeletorTipoPeriodo
+                    valor={f.periodo}
+                    onChange={(tipo) =>
+                      aplicar(
+                        (d) => ({
+                          ...d,
+                          funcoes: d.funcoes.map((x) =>
+                            x.id === f.id ? { ...x, periodo: tipo } : x,
+                          ),
+                        }),
+                        () => definirPeriodoFuncao(f.id, tipo),
+                      )
+                    }
+                  />
+                  <p className="mt-1.5 text-[10px] text-corrente">
+                    Escalas já lançadas mantêm o período antigo.
+                  </p>
+                </div>
 
                 {/* escala da função por dia e sexo */}
                 <div>
@@ -1042,6 +1066,43 @@ function LideresEditor({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Escolhe qual conjunto de períodos a função pede: nenhum, Almoço/Jantar ou
+// Manhã/Tarde/Noite. Usado na criação e na edição da função.
+function SeletorTipoPeriodo({
+  valor,
+  onChange,
+}: {
+  valor: string | null;
+  onChange: (tipo: string | null) => void;
+}) {
+  const opcoes: { tipo: string | null; label: string }[] = [
+    { tipo: null, label: "Não pede" },
+    ...Object.entries(TIPOS_PERIODO).map(([tipo, cfg]) => ({ tipo, label: cfg.label })),
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {opcoes.map((o) => {
+        const ativo = (valor ?? null) === o.tipo;
+        return (
+          <button
+            key={o.tipo ?? "nenhum"}
+            onClick={() => onChange(o.tipo)}
+            className="rounded-full border px-3 py-1.5 text-xs font-semibold transition"
+            style={
+              ativo
+                ? { borderColor: `${AZUL}66`, color: AZUL, background: `${AZUL}10` }
+                : { borderColor: "rgba(164,214,232,0.18)", color: "#416a87" }
+            }
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

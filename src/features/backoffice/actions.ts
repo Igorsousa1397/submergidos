@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/permissions";
-import { DIAS_ESCALA, TELAS } from "./shared";
+import { DIAS_ESCALA, TELAS, TIPOS_PERIODO, periodosDaFuncao } from "./shared";
 
 // Back Office é exclusivo de admin/líder geral (como no original).
 async function exigirAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -86,10 +86,25 @@ export async function adicionarEscala(
   if (!DIAS_ESCALA.includes(dia as (typeof DIAS_ESCALA)[number]))
     return { ok: false as const, erro: "Dia inválido." };
 
+  // o período tem que ser um dos que a função aceita — a UI já pergunta,
+  // mas o cliente podia mandar qualquer string
+  const { data: fn } = await supabase
+    .from("funcoes")
+    .select("periodo")
+    .eq("id", funcaoId)
+    .maybeSingle();
+  if (!fn) return { ok: false as const, erro: "Função não encontrada." };
+
+  const opcoes = periodosDaFuncao(fn.periodo);
+  if (opcoes && (!periodo || !opcoes.includes(periodo)))
+    return { ok: false as const, erro: `Selecione o período: ${opcoes.join(" ou ")}.` };
+  // função sem período não guarda período
+  const periodoFinal = opcoes ? periodo : null;
+
   // devolve o id para a UI atualizar sem recarregar a página
   const { data, error } = await supabase
     .from("escalas")
-    .insert({ servo_id: servoId, funcao_id: funcaoId, dia, periodo })
+    .insert({ servo_id: servoId, funcao_id: funcaoId, dia, periodo: periodoFinal })
     .select("id")
     .single();
 
@@ -118,13 +133,15 @@ export async function removerEscala(escalaId: string) {
 
 // ============ Funções ============
 
-export async function criarFuncao(nome: string, temPeriodo: boolean) {
+export async function criarFuncao(nome: string, tipoPeriodo: string | null) {
   const supabase = await createClient();
   const erroAdmin = await exigirAdmin(supabase);
   if (erroAdmin) return { ok: false, erro: erroAdmin };
 
   const limpo = nome.trim();
   if (!limpo) return { ok: false, erro: "Informe o nome da função." };
+  if (tipoPeriodo && !TIPOS_PERIODO[tipoPeriodo])
+    return { ok: false, erro: "Tipo de período inválido." };
 
   const { data: existente } = await supabase
     .from("funcoes")
@@ -135,7 +152,25 @@ export async function criarFuncao(nome: string, temPeriodo: boolean) {
 
   const { error } = await supabase
     .from("funcoes")
-    .insert({ nome: limpo, periodo: temPeriodo ? "almoco_jantar" : null, is_sistema: false });
+    .insert({ nome: limpo, periodo: tipoPeriodo, is_sistema: false });
+  if (error) return { ok: false, erro: error.message };
+  revalidar();
+  return { ok: true };
+}
+
+// Troca (ou remove) o conjunto de períodos que a função pede. As escalas já
+// gravadas mantêm o período antigo — trocar o tipo não reescreve histórico.
+export async function definirPeriodoFuncao(id: string, tipoPeriodo: string | null) {
+  const supabase = await createClient();
+  const erroAdmin = await exigirAdmin(supabase);
+  if (erroAdmin) return { ok: false, erro: erroAdmin };
+  if (tipoPeriodo && !TIPOS_PERIODO[tipoPeriodo])
+    return { ok: false, erro: "Tipo de período inválido." };
+
+  const { error } = await supabase
+    .from("funcoes")
+    .update({ periodo: tipoPeriodo })
+    .eq("id", id);
   if (error) return { ok: false, erro: error.message };
   revalidar();
   return { ok: true };

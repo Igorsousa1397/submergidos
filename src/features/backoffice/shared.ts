@@ -19,6 +19,19 @@ export const DIA_ESCALA_COR: Record<string, string> = {
   domingo: "#ff9f0a",
 };
 
+// Funções que pedem PERÍODO. `funcoes.periodo` guarda o TIPO do conjunto
+// (não o período em si) e cada escala guarda o período escolhido — por isso
+// dá para o Refeitório perguntar Almoço/Jantar e o Banheiro perguntar
+// Manhã/Tarde/Noite usando o mesmo mecanismo.
+export const TIPOS_PERIODO: Record<string, { label: string; opcoes: string[] }> = {
+  almoco_jantar: { label: "Almoço/Jantar", opcoes: ["Almoço", "Jantar"] },
+  manha_tarde_noite: { label: "Manhã/Tarde/Noite", opcoes: ["Manhã", "Tarde", "Noite"] },
+};
+
+/** Períodos que a função pede, ou null quando ela não pede nenhum. */
+export const periodosDaFuncao = (tipo: string | null | undefined): string[] | null =>
+  (tipo && TIPOS_PERIODO[tipo]?.opcoes) || null;
+
 // Catálogo de telas controláveis por permissão. São as telas de GESTÃO já
 // construídas — as demais (check-in, quartos, avisos, agenda da home) são
 // abertas a todos os logados e não precisam de toggle.
