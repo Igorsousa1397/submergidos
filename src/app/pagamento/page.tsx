@@ -156,7 +156,6 @@ export default function PagamentoPage() {
   const pagar = async (tipo: "pix" | "credito") => {
     if (!enc || pagando) return;
     setPagando(true);
-    const { pix, credito } = valores(enc.igreja, enc.acordo_valor);
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/criar-pagamento`, {
         method: "POST",
@@ -165,17 +164,14 @@ export default function PagamentoPage() {
           apikey: SUPABASE_ANON,
           Authorization: `Bearer ${SUPABASE_ANON}`,
         },
-        body: JSON.stringify({
-          encontristaId: enc.id,
-          nome: enc.nome,
-          tipo,
-          valor: tipo === "pix" ? pix : credito,
-        }),
+        // sem `valor`: o preço (padrão, Itajaí ou acordo) é calculado na
+        // Edge Function a partir do cadastro. Aqui é só rótulo.
+        body: JSON.stringify({ id: enc.id, tipo }),
       });
       const data = await res.json();
       if (data.init_point) window.location.href = data.init_point;
       else {
-        setErro("Não foi possível gerar o pagamento. Tente novamente.");
+        setErro(data.error ?? "Não foi possível gerar o pagamento. Tente novamente.");
         setPagando(false);
       }
     } catch {

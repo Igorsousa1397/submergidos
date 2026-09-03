@@ -37,18 +37,16 @@ export function PagarInscricao({
           apikey: SUPABASE_ANON,
           Authorization: `Bearer ${SUPABASE_ANON}`,
         },
-        body: JSON.stringify({
-          encontristaId: userId,
-          nome,
-          email: email ?? "",
-          tipo,
-          valor: tipo === "servo_pix" ? valorPix : valorCredito,
-        }),
+        // sem `valor`: quem calcula o preço é a Edge Function, a partir do
+        // perfil. Aqui os valores servem só para o rótulo dos botões.
+        body: JSON.stringify({ id: userId, tipo }),
       });
       const data = await res.json();
       if (data.init_point) window.location.href = data.init_point;
       else {
-        setErro("Não foi possível gerar o pagamento. Tente novamente.");
+        // o servidor recusa cobrança de quem já está pago/abonado/isento e
+        // explica o motivo — mostrar isso ajuda mais que um erro genérico
+        setErro(data.error ?? "Não foi possível gerar o pagamento. Tente novamente.");
         setPagando(false);
       }
     } catch {

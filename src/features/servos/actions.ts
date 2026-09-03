@@ -88,7 +88,10 @@ export async function removerServoPagarDepois(id: string) {
   return { ok: true };
 }
 
-// Pagamento do servo é PIX manual no Submergidos (sem gateway) — o admin marca.
+// Baixa MANUAL do pagamento (PIX direto com a liderança, dinheiro, etc.).
+// O servo também pode pagar pelo gateway — nesse caso quem marca é o
+// webhook-pagamento. `pagamento_via` separa os dois casos: sem ele não dá
+// para saber se um "pago" veio do Mercado Pago ou de um clique aqui.
 export async function marcarServoPago(id: string) {
   const supabase = await createClient();
   const erroAdmin = await exigirAdmin(supabase);
@@ -96,7 +99,12 @@ export async function marcarServoPago(id: string) {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ pagamento: "pago", pago_em: new Date().toISOString() })
+    .update({
+      pagamento: "pago",
+      pago_em: new Date().toISOString(),
+      pagamento_via: "manual",
+      pagamento_id: null,
+    })
     .eq("id", id);
   if (error) return { ok: false, erro: error.message };
   revalidar();
@@ -110,7 +118,7 @@ export async function reverterServoPago(id: string) {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ pagamento: "pendente", pago_em: null })
+    .update({ pagamento: "pendente", pago_em: null, pagamento_id: null, pagamento_via: null })
     .eq("id", id);
   if (error) return { ok: false, erro: error.message };
   revalidar();
