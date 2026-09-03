@@ -34,6 +34,7 @@ import {
   LIDER_MAP_DEFAULT,
 } from "../shared";
 import type { BackOfficeData, UsuarioBack, FuncaoBack, RoleBack } from "../queries";
+import { baixarPlanilha } from "@/lib/planilha";
 
 const OK = "#12b5a6";
 const AZUL = "#0a84ff";
@@ -365,7 +366,7 @@ function TabEscalas({
     });
   }, [dados.usuarios, busca, fPerfil]);
 
-  const exportarCSV = () => {
+  const exportarPlanilha = () => {
     const cab = ["Nome", "Perfil", "Quinta", "Sexta", "Sábado", "Domingo"];
     const nomeRole = new Map(dados.roles.map((r) => [r.slug, r.nome]));
     const linhas = dados.usuarios.map((u) => [
@@ -378,26 +379,17 @@ function TabEscalas({
           .join(", "),
       ),
     ]);
-    const csv = [cab, ...linhas]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "escalas-submergidos.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    baixarPlanilha({ arquivo: "escalas-submergidos", aba: "Escalas", colunas: cab, linhas });
   };
 
   return (
     <div className="space-y-2">
       <button
-        onClick={exportarCSV}
+        onClick={exportarPlanilha}
         className="w-full rounded-control py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
         style={{ background: OK }}
       >
-        Exportar Escalas (CSV)
+        Exportar Escalas (Excel)
       </button>
 
       <div className="grid grid-cols-[1fr_auto] gap-2">

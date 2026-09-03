@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { QrCode, Check } from "lucide-react";
 import { alternarCheckin, atribuirOnibus } from "../actions";
 import type { CheckinRow, OnibusInfo } from "../queries";
+import { baixarPlanilha } from "@/lib/planilha";
 
 // scanner só carrega no client e sob demanda (html5-qrcode acessa a câmera).
 const CheckinScanner = dynamic(
@@ -196,7 +197,7 @@ export function CheckinView({
     setToast({ tipo: "ok", msg: `Check-in feito: ${enc.nome}` });
   };
 
-  const exportarCSV = () => {
+  const exportarPlanilha = () => {
     const confirmados = rows.filter((r) => r.chegou);
     const nomeOnibus = new Map(onibus.map((o) => [o.id, o.identificacao]));
     const cab = ["Nome", "CPF", "Célula", "Sexo", "Ônibus", "Check-in"];
@@ -208,16 +209,7 @@ export function CheckinView({
       e.onibus_id ? nomeOnibus.get(e.onibus_id) ?? "" : "",
       fmtHora(e.checkin_at),
     ]);
-    const csv = [cab, ...linhas]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "checkin-submergidos.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    baixarPlanilha({ arquivo: "checkin-submergidos", aba: "Check-in", colunas: cab, linhas });
   };
 
   return (
@@ -253,7 +245,7 @@ export function CheckinView({
 
       {/* exportar */}
       <button
-        onClick={exportarCSV}
+        onClick={exportarPlanilha}
         className="w-full rounded-control border border-[rgba(164,214,232,0.18)] py-3 text-sm font-semibold text-corrente transition hover:text-luz active:scale-[0.98]"
       >
         Exportar Excel (confirmados)

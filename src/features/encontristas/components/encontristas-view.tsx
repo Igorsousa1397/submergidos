@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { atualizarStatus, alternarInscricoes, salvarPagarDepois, salvarAcordo, marcarComoPago, reverterPago } from "../actions";
+import { baixarPlanilha } from "@/lib/planilha";
 
 type Status = "pago" | "pendente" | "pagar_depois" | "desistiu";
 type Sexo = "masculino" | "feminino" | null;
@@ -245,7 +246,7 @@ export function EncontristasView({
     });
   };
 
-  const exportarCSV = () => {
+  const exportarPlanilha = () => {
     const cab = ["Nome", "CPF", "Nascimento", "Sexo", "Célula", "Status", "Check-in"];
     const linhas = lista.map((e) => [
       e.nome,
@@ -256,16 +257,7 @@ export function EncontristasView({
       STATUS_LABEL[e.status],
       e.chegou ? "Sim" : "Não",
     ]);
-    const csv = [cab, ...linhas]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `encontristas-submergidos.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    baixarPlanilha({ arquivo: "encontristas-submergidos", aba: "Encontristas", colunas: cab, linhas });
   };
 
   const cardCls = "rounded-card border border-[rgba(164,214,232,0.12)] bg-[rgba(0,14,33,0.5)]";
@@ -352,10 +344,10 @@ export function EncontristasView({
 
       {/* exportar */}
       <button
-        onClick={exportarCSV}
+        onClick={exportarPlanilha}
         className="w-full rounded-control py-3 text-sm font-semibold text-white transition active:scale-[0.98]" style={{ background: "#12b5a6" }}
       >
-        Exportar Excel (CSV)
+        Exportar Excel
       </button>
 
       {/* toggle inscrições */}

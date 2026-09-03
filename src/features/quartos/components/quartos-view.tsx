@@ -13,6 +13,7 @@ import {
   removerEncQuarto,
 } from "../actions";
 import type { QuartoRow, PessoaOption, Genero } from "../queries";
+import { baixarPlanilha } from "@/lib/planilha";
 
 const OK = "#12b5a6";
 const AVISO = "#ff9f0a"; // laranja do Quarto Mães (cor do original)
@@ -224,7 +225,7 @@ export function QuartosView({
     });
   };
 
-  const exportarCSV = () => {
+  const exportarPlanilha = () => {
     // ambos os gêneros, como no original (Quarto | Nome | Camiseta)
     const cab = ["Ala", "Quarto", "Nome", "Camiseta"];
     const linhas: string[][] = [];
@@ -242,16 +243,7 @@ export function QuartosView({
           ]);
       }
     }
-    const csv = [cab, ...linhas]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "encontristas-por-quarto.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    baixarPlanilha({ arquivo: "encontristas-por-quarto", aba: "Quartos", colunas: cab, linhas });
   };
 
   return (
@@ -323,7 +315,7 @@ export function QuartosView({
       {edit && (
         <>
           <button
-            onClick={exportarCSV}
+            onClick={exportarPlanilha}
             className="w-full rounded-control py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
             style={{ background: OK }}
           >

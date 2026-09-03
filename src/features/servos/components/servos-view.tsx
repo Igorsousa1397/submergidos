@@ -17,6 +17,7 @@ import {
   recusarServo,
 } from "../actions";
 import type { ServoRow, RoleInfo, ServoPagamento } from "../queries";
+import { baixarPlanilha } from "@/lib/planilha";
 
 type Sexo = "masculino" | "feminino";
 
@@ -227,7 +228,7 @@ export function ServosView({
     });
   };
 
-  const exportarCSV = () => {
+  const exportarPlanilha = () => {
     const cab = ["Nome", "Email", "CPF", "Nascimento", "Perfil", "Pagamento", "Ativo"];
     const linhas = lista.map((u) => [
       u.nome,
@@ -238,16 +239,7 @@ export function ServosView({
       isIsentoPorPerfil(u) ? "Abonado (perfil)" : PAG_LABEL[u.pagamento],
       u.ativo ? "Sim" : "Não",
     ]);
-    const csv = [cab, ...linhas]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "servos-submergidos.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+    baixarPlanilha({ arquivo: "servos-submergidos", aba: "Servos", colunas: cab, linhas });
   };
 
   // cor da barra lateral: hierarquia de perfil vence status (regra do original)
@@ -544,11 +536,11 @@ export function ServosView({
       {/* exportar */}
       {admin && (
         <button
-          onClick={exportarCSV}
+          onClick={exportarPlanilha}
           className="w-full rounded-control py-3 text-sm font-semibold text-white transition active:scale-[0.98]"
           style={{ background: OK }}
         >
-          Exportar Excel (CSV)
+          Exportar Excel
         </button>
       )}
 
