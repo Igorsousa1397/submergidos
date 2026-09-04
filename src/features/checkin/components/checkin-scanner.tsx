@@ -23,6 +23,28 @@ export function CheckinScanner({
     let cancelado = false;
     let jaLeu = false;
 
+    // Html5Qrcode.stop() LANÇA de forma SÍNCRONA (e uma string, não Error)
+    // quando o scanner já está parado — não devolve promise rejeitada. Como
+    // o callback de leitura já para a câmera, a limpeza do unmount caía
+    // exatamente nesse caso: a exceção escapava do cleanup e o React
+    // derrubava a tela com "Application error". Por isso o try/catch envolve
+    // a CHAMADA, e não só o await.
+    const parar = async () => {
+      const s = scanner;
+      scanner = null;
+      if (!s) return;
+      try {
+        await s.stop();
+      } catch {
+        // já estava parado — nada a fazer
+      }
+      try {
+        s.clear();
+      } catch {
+        // idem
+      }
+    };
+
     (async () => {
       try {
         const { Html5Qrcode } = await import("html5-qrcode");
@@ -35,10 +57,7 @@ export function CheckinScanner({
             if (jaLeu) return;
             jaLeu = true;
             // para a câmera antes de entregar o resultado ao pai
-            scanner
-              ?.stop()
-              .catch(() => {})
-              .finally(() => onScanRef.current(decoded));
+            void parar().finally(() => onScanRef.current(decoded));
           },
           () => {}, // erros de frame (sem QR) — ignora
         );
@@ -52,12 +71,7 @@ export function CheckinScanner({
 
     return () => {
       cancelado = true;
-      if (scanner) {
-        scanner
-          .stop()
-          .then(() => scanner?.clear())
-          .catch(() => {});
-      }
+      void parar();
     };
   }, []);
 
