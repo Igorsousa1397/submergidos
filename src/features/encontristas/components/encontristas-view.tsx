@@ -170,17 +170,36 @@ export function EncontristasView({
     return s;
   }, [rows]);
 
-  // ---- lista filtrada ----
-  const lista = useMemo(() => {
+  // ---- filtros, menos o de sexo ----
+  // Separado para as abas de sexo poderem contar sobre ESTE recorte: o número
+  // na aba é exatamente quantas linhas ela mostra se for clicada.
+  const semSexo = useMemo(() => {
     const q = busca.trim().toLowerCase();
     return rows.filter((e) => {
-      if (aba !== "todos" && e.sexo !== aba) return false;
       if (celulaId && e.celula !== celulaId) return false;
       if (filtroStatus && e.status !== filtroStatus) return false;
       if (q && !e.nome.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [rows, aba, celulaId, filtroStatus, busca]);
+  }, [rows, celulaId, filtroStatus, busca]);
+
+  const porSexo = useMemo(
+    () => ({
+      todos: semSexo.length,
+      feminino: semSexo.filter((e) => e.sexo === "feminino").length,
+      masculino: semSexo.filter((e) => e.sexo === "masculino").length,
+    }),
+    [semSexo],
+  );
+
+  // quem entrou sem sexo informado não aparece em nenhuma das duas abas
+  const semSexoInformado = porSexo.todos - porSexo.feminino - porSexo.masculino;
+
+  // ---- lista filtrada ----
+  const lista = useMemo(
+    () => (aba === "todos" ? semSexo : semSexo.filter((e) => e.sexo === aba)),
+    [semSexo, aba],
+  );
 
   const mudarStatus = (id: string, status: Status) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
@@ -309,9 +328,16 @@ export function EncontristasView({
             }
           >
             {label}
+            <span className="ml-1.5 text-xs font-bold opacity-60">{porSexo[val]}</span>
           </button>
         ))}
       </div>
+
+      {semSexoInformado > 0 && (
+        <p className="-mt-2 text-center text-[11px] text-corrente">
+          {semSexoInformado} sem sexo informado — não aparece em Mulheres nem em Homens.
+        </p>
+      )}
 
       {/* filtros de célula e status */}
       <div className="grid grid-cols-2 gap-2">
