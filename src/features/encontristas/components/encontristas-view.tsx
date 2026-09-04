@@ -132,7 +132,7 @@ export function EncontristasView({
 }) {
   const [aba, setAba] = useState<"todos" | "feminino" | "masculino">("todos");
   const [celulaId, setCelulaId] = useState<string>("");
-  const [filtroStatus, setFiltroStatus] = useState<Status | "">("");
+  const [filtroStatus, setFiltroStatus] = useState<Status[]>([]);
   const [busca, setBusca] = useState("");
   const [expandido, setExpandido] = useState<string | null>(null);
   const [bloqueadas, setBloqueadas] = useState(inscricoesBloqueadas);
@@ -170,36 +170,45 @@ export function EncontristasView({
     return s;
   }, [rows]);
 
-  // ---- filtros, menos o de sexo ----
-  // Separado para as abas de sexo poderem contar sobre ESTE recorte: o número
-  // na aba é exatamente quantas linhas ela mostra se for clicada.
-  const semSexo = useMemo(() => {
+  // ---- lista filtrada + contagens ----
+  // Cada contagem ignora o SEU PRÓPRIO filtro: o número mostrado numa opção
+  // diz quantas linhas ela traz se for marcada — e não quantas sobram depois
+  // de aplicá-la (que seria sempre igual à lista, e portanto inútil).
+  const { lista, porSexo, porStatus } = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    return rows.filter((e) => {
-      if (celulaId && e.celula !== celulaId) return false;
-      if (filtroStatus && e.status !== filtroStatus) return false;
-      if (q && !e.nome.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [rows, celulaId, filtroStatus, busca]);
+    const porCelula = (e: EncRow) => !celulaId || e.celula === celulaId;
+    const porBusca = (e: EncRow) => !q || e.nome.toLowerCase().includes(q);
+    const casaStatus = (e: EncRow) =>
+      filtroStatus.length === 0 || filtroStatus.includes(e.status);
+    const casaSexo = (e: EncRow) => aba === "todos" || e.sexo === aba;
 
-  const porSexo = useMemo(
-    () => ({
-      todos: semSexo.length,
-      feminino: semSexo.filter((e) => e.sexo === "feminino").length,
-      masculino: semSexo.filter((e) => e.sexo === "masculino").length,
-    }),
-    [semSexo],
-  );
+    const baseSexo = rows.filter((e) => porCelula(e) && porBusca(e) && casaStatus(e));
+    const baseStatus = rows.filter((e) => porCelula(e) && porBusca(e) && casaSexo(e));
+
+    return {
+      lista: baseSexo.filter(casaSexo),
+      porSexo: {
+        todos: baseSexo.length,
+        feminino: baseSexo.filter((e) => e.sexo === "feminino").length,
+        masculino: baseSexo.filter((e) => e.sexo === "masculino").length,
+      },
+      porStatus: Object.fromEntries(
+        (Object.keys(STATUS_LABEL) as Status[]).map((st) => [
+          st,
+          baseStatus.filter((e) => e.status === st).length,
+        ]),
+      ) as Record<Status, number>,
+    };
+  }, [rows, aba, celulaId, filtroStatus, busca]);
 
   // quem entrou sem sexo informado não aparece em nenhuma das duas abas
   const semSexoInformado = porSexo.todos - porSexo.feminino - porSexo.masculino;
 
-  // ---- lista filtrada ----
-  const lista = useMemo(
-    () => (aba === "todos" ? semSexo : semSexo.filter((e) => e.sexo === aba)),
-    [semSexo, aba],
-  );
+  const temFiltro =
+    aba !== "todos" || celulaId !== "" || filtroStatus.length > 0 || busca.trim() !== "";
+
+  const alternarStatus = (st: Status) =>
+    setFiltroStatus((prev) => (prev.includes(st) ? prev.filter((x) => x !== st) : [...prev, st]));
 
   const mudarStatus = (id: string, status: Status) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
@@ -339,33 +348,60 @@ export function EncontristasView({
         </p>
       )}
 
-      {/* filtros de célula e status */}
-      <div className="grid grid-cols-2 gap-2">
-        <select
-          value={celulaId}
-          onChange={(e) => setCelulaId(e.target.value)}
-          className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none focus:border-raso"
-        >
-          <option value="">Todas as células</option>
-          {celulasPresentes.map((nome) => (
-            <option key={nome} value={nome}>
-              {nome}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filtroStatus}
-          onChange={(e) => setFiltroStatus(e.target.value as Status | "")}
-          className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none focus:border-raso"
-          style={filtroStatus ? { color: STATUS_COR[filtroStatus] } : undefined}
-        >
-          <option value="">Todos os status</option>
-          {(Object.keys(STATUS_LABEL) as Status[]).map((st) => (
-            <option key={st} value={st}>
-              {STATUS_LABEL[st]}
-            </option>
-          ))}
-        </select>
+      {/* filtro de célula */}
+      <select
+        value={celulaId}
+        onChange={(e) => setCelulaId(e.target.value)}
+        className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none focus:border-raso"
+      >
+        <option value="">Todas as células</option>
+        {celulasPresentes.map((nome) => (
+          <option key={nome} value={nome}>
+            {nome}
+          </option>
+        ))}
+      </select>
+
+      {/* status: múltipla seleção (nenhum marcado = todos) */}
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[11px] uppercase tracking-wide text-corrente">
+            Status <span className="normal-case">— marque quantos quiser</span>
+          </p>
+          {filtroStatus.length > 0 && (
+            <button
+              onClick={() => setFiltroStatus([])}
+              className="text-[11px] font-semibold text-raso underline underline-offset-2"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(STATUS_LABEL) as Status[]).map((st) => {
+            const ativo = filtroStatus.includes(st);
+            return (
+              <button
+                key={st}
+                onClick={() => alternarStatus(st)}
+                aria-pressed={ativo}
+                className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition active:scale-[0.97]"
+                style={
+                  ativo
+                    ? {
+                        borderColor: STATUS_COR[st],
+                        color: STATUS_COR[st],
+                        background: `${STATUS_COR[st]}1a`,
+                      }
+                    : { borderColor: "rgba(164,214,232,0.18)", color: "#416a87" }
+                }
+              >
+                {STATUS_LABEL[st]}
+                <span className="opacity-70">{porStatus[st]}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* exportar */}
@@ -410,6 +446,13 @@ export function EncontristasView({
         onChange={(e) => setBusca(e.target.value)}
         className="w-full rounded-control border border-[rgba(164,214,232,0.18)] bg-[rgba(0,14,33,0.6)] px-3 py-3 text-sm text-luz outline-none placeholder:text-corrente focus:border-raso"
       />
+
+      {/* quantos o filtro atual traz */}
+      <p className="text-xs text-corrente">
+        <span className="font-display text-base font-extrabold text-luz">{lista.length}</span>{" "}
+        {lista.length === 1 ? "encontrista" : "encontristas"}
+        {temFiltro && ` de ${rows.length}`}
+      </p>
 
       {/* lista */}
       <div className="space-y-2">
