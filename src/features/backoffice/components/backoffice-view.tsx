@@ -800,13 +800,18 @@ function TabFuncoes({
   const [nome, setNome] = useState("");
   const [tipoPeriodo, setTipoPeriodo] = useState<string | null>(null);
 
-  // pessoas por função (nome + dia + sexo), derivado das escalas dos usuários
+  // pessoas por função (nome + dia + sexo + período), derivado das escalas
   const porFuncao = useMemo(() => {
-    const mapa = new Map<string, { nome: string; dia: string; sexo: string | null }[]>();
+    const mapa = new Map<
+      string,
+      { nome: string; dia: string; sexo: string | null; periodo: string | null }[]
+    >();
     for (const f of dados.funcoes) mapa.set(f.id, []);
     for (const u of dados.usuarios)
       for (const e of u.escalas)
-        mapa.get(e.funcaoId)?.push({ nome: u.nome, dia: e.dia, sexo: u.sexo });
+        mapa
+          .get(e.funcaoId)
+          ?.push({ nome: u.nome, dia: e.dia, sexo: u.sexo, periodo: e.periodo });
     return mapa;
   }, [dados]);
 
@@ -978,10 +983,18 @@ function TabFuncoes({
                                 {g.map((p, i) => (
                                   <p key={i} className="flex items-center gap-1.5 text-xs text-luz">
                                     <span
-                                      className="h-1 w-1 rounded-full"
+                                      className="h-1 w-1 rounded-full shrink-0"
                                       style={{ background: cor }}
                                     />
-                                    {p.nome}
+                                    <span className="min-w-0 flex-1 truncate">{p.nome}</span>
+                                    {p.periodo && (
+                                      <span
+                                        className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                                        style={{ color: cor, background: `${cor}1f` }}
+                                      >
+                                        {p.periodo}
+                                      </span>
+                                    )}
                                   </p>
                                 ))}
                               </div>
